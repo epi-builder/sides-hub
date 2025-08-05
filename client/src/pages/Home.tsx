@@ -27,13 +27,25 @@ export default function Home() {
     }
   });
 
+  const queryParams = new URLSearchParams();
+  if (searchQuery || urlSearch) {
+    queryParams.set('search', searchQuery || urlSearch || '');
+  }
+  if (selectedCategory !== "all") {
+    queryParams.set('tags', selectedCategory);
+  }
+  if (selectedTechStack !== "all") {
+    queryParams.set('techStack', selectedTechStack);
+  }
+  if (sortBy !== "recent") {
+    queryParams.set('sortBy', sortBy);
+  }
+  
+  const queryString = queryParams.toString();
+  const apiUrl = queryString ? `/api/projects?${queryString}` : '/api/projects';
+
   const { data: projects = [], isLoading } = useQuery<ProjectWithUser[]>({
-    queryKey: ["/api/projects", { 
-      search: searchQuery || urlSearch || undefined, 
-      tags: selectedCategory !== "all" ? [selectedCategory] : undefined,
-      techStack: selectedTechStack !== "all" ? [selectedTechStack] : undefined,
-      sortBy 
-    }],
+    queryKey: [apiUrl],
   });
 
   const { data: analytics } = useQuery({
@@ -43,12 +55,12 @@ export default function Home() {
   // Extract unique categories and tech stacks
   const categories = useMemo(() => {
     const allTags = projects.flatMap(p => p.tags || []);
-    return [...new Set(allTags)].slice(0, 10); // Top 10 categories
+    return Array.from(new Set(allTags)).slice(0, 10); // Top 10 categories
   }, [projects]);
 
   const techStacks = useMemo(() => {
     const allTech = projects.flatMap(p => p.techStack || []);
-    return [...new Set(allTech)].slice(0, 10); // Top 10 tech stacks
+    return Array.from(new Set(allTech)).slice(0, 10); // Top 10 tech stacks
   }, [projects]);
 
   const clearFilters = () => {
