@@ -46,9 +46,6 @@ export const projects = pgTable("projects", {
   sourceUrl: varchar("source_url"),
   tags: text("tags").array(),
   techStack: text("tech_stack").array(),
-  viewCount: integer("view_count").default(0),
-  likeCount: integer("like_count").default(0),
-  commentCount: integer("comment_count").default(0),
   userId: varchar("user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -70,14 +67,21 @@ export const projectBookmarks = pgTable("project_bookmarks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project views table
+export const projectViews = pgTable("project_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }), // nullable for anonymous views
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Community posts table
 export const communityPosts = pgTable("community_posts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   isPinned: boolean("is_pinned").default(false),
-  likeCount: integer("like_count").default(0),
-  commentCount: integer("comment_count").default(0),
   userId: varchar("user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -107,6 +111,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
   projectLikes: many(projectLikes),
   projectBookmarks: many(projectBookmarks),
+  projectViews: many(projectViews),
   communityPosts: many(communityPosts),
   postLikes: many(postLikes),
   comments: many(comments),
@@ -119,7 +124,19 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   likes: many(projectLikes),
   bookmarks: many(projectBookmarks),
+  views: many(projectViews),
   comments: many(comments),
+}));
+
+export const projectViewsRelations = relations(projectViews, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectViews.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectViews.userId],
+    references: [users.id],
+  }),
 }));
 
 export const projectLikesRelations = relations(projectLikes, ({ one }) => ({
@@ -188,9 +205,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
-  viewCount: true,
-  likeCount: true,
-  commentCount: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -200,10 +214,23 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
   id: true,
-  likeCount: true,
-  commentCount: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertProjectViewSchema = createInsertSchema(projectViews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProjectLikeSchema = createInsertSchema(projectLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPostLikeSchema = createInsertSchema(postLikes).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({
@@ -217,13 +244,26 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
-export type ProjectWithUser = Project & { user: User };
+export type ProjectWithUser = Project & { 
+  user: User;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+};
 export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type CommunityPost = typeof communityPosts.$inferSelect;
-export type CommunityPostWithUser = CommunityPost & { user: User };
+export type CommunityPostWithUser = CommunityPost & { 
+  user: User;
+  likeCount?: number;
+  commentCount?: number;
+};
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type CommentWithUser = Comment & { user: User };
 export type ProjectLike = typeof projectLikes.$inferSelect;
 export type ProjectBookmark = typeof projectBookmarks.$inferSelect;
+export type ProjectView = typeof projectViews.$inferSelect;
 export type PostLike = typeof postLikes.$inferSelect;
+export type InsertProjectView = z.infer<typeof insertProjectViewSchema>;
+export type InsertProjectLike = z.infer<typeof insertProjectLikeSchema>;
+export type InsertPostLike = z.infer<typeof insertPostLikeSchema>;

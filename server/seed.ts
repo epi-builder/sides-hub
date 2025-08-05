@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, projects, communityPosts, comments } from "@shared/schema";
+import { users, projects, communityPosts, comments, projectLikes, projectViews, postLikes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 const mockUsers = [
@@ -52,9 +52,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/alexkim/taskflow",
     tags: ["productivity", "ai", "mobile"],
     techStack: ["React Native", "Node.js", "OpenAI", "PostgreSQL"],
-    viewCount: 2847,
-    likeCount: 156,
-    commentCount: 23,
   },
   {
     id: "project-2", 
@@ -67,9 +64,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/sarahchen/codesnap",
     tags: ["developer-tools", "productivity", "design"],
     techStack: ["React", "TypeScript", "Canvas API", "Tailwind CSS"],
-    viewCount: 1923,
-    likeCount: 89,
-    commentCount: 12,
   },
   {
     id: "project-3",
@@ -82,9 +76,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/davidrodriguez/ecotracker",
     tags: ["sustainability", "lifestyle", "environment"],
     techStack: ["Vue.js", "Express", "MongoDB", "Chart.js"],
-    viewCount: 3421,
-    likeCount: 234,
-    commentCount: 45,
   },
   {
     id: "project-4",
@@ -97,9 +88,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/emmajohnson/mindfulmoments",
     tags: ["health", "wellness", "mobile"],
     techStack: ["Flutter", "Firebase", "Dart", "Cloud Firestore"],
-    viewCount: 5672,
-    likeCount: 387,
-    commentCount: 78,
   },
   {
     id: "project-5",
@@ -112,9 +100,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/ryanpark/devlink",
     tags: ["social", "networking", "collaboration"],
     techStack: ["Next.js", "GraphQL", "Prisma", "PostgreSQL"],
-    viewCount: 4158,
-    likeCount: 298,
-    commentCount: 62,
   },
   {
     id: "project-6",
@@ -127,9 +112,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/alexkim/spendsmart",
     tags: ["finance", "productivity", "mobile"],
     techStack: ["React Native", "Node.js", "Plaid API", "MongoDB"],
-    viewCount: 2134,
-    likeCount: 142,
-    commentCount: 28,
   },
   {
     id: "project-7",
@@ -142,9 +124,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/sarahchen/reciperank",
     tags: ["food", "ai", "lifestyle"],
     techStack: ["Python", "Django", "TensorFlow", "React"],
-    viewCount: 3847,
-    likeCount: 201,
-    commentCount: 34,
   },
   {
     id: "project-8",
@@ -157,9 +136,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/davidrodriguez/fitquest", 
     tags: ["health", "gaming", "mobile"],
     techStack: ["Unity", "C#", "Firebase", "Google Fit API"],
-    viewCount: 6234,
-    likeCount: 445,
-    commentCount: 89,
   }
 ];
 
@@ -169,24 +145,18 @@ const mockCommunityPosts = [
     userId: "mock-user-1",
     title: "What's your favorite state management solution in 2024?",
     content: "I've been exploring different state management options for React projects. Currently torn between Zustand, Redux Toolkit, and Jotai. What are you all using and why? Would love to hear about your experiences with performance and developer experience!",
-    likeCount: 47,
-    commentCount: 23,
   },
   {
     id: "post-2", 
     userId: "mock-user-3",
     title: "Building sustainable tech: Green coding practices",
     content: "Recently learned about the environmental impact of our code choices. Simple optimizations like reducing API calls, optimizing images, and choosing efficient algorithms can significantly reduce energy consumption. What green coding practices do you follow?",
-    likeCount: 89,
-    commentCount: 34,
   },
   {
     id: "post-3",
     userId: "mock-user-4",
     title: "Mobile app accessibility - Resources and tips",
     content: "Sharing some great resources I've found for making mobile apps more accessible. Screen reader testing, color contrast tools, and gesture alternatives are game-changers. Happy to share specific tools and testing approaches that have worked well for me.",
-    likeCount: 156,
-    commentCount: 42,
   }
 ];
 
@@ -212,6 +182,50 @@ export async function seedDatabase() {
     // Insert mock community posts
     console.log("💬 Creating mock community posts...");
     await db.insert(communityPosts).values(mockCommunityPosts);
+
+    // Seed project interactions
+    console.log("❤️ Creating project likes...");
+    const projectLikesData = [
+      { projectId: "project-1", userId: "mock-user-2" },
+      { projectId: "project-1", userId: "mock-user-3" },
+      { projectId: "project-1", userId: "mock-user-4" },
+      { projectId: "project-2", userId: "mock-user-1" },
+      { projectId: "project-2", userId: "mock-user-4" },
+      { projectId: "project-3", userId: "mock-user-1" },
+      { projectId: "project-3", userId: "mock-user-2" },
+      { projectId: "project-3", userId: "mock-user-5" },
+      { projectId: "project-4", userId: "mock-user-3" },
+      { projectId: "project-5", userId: "mock-user-2" },
+    ];
+    await db.insert(projectLikes).values(projectLikesData);
+
+    // Seed project views
+    console.log("👀 Creating project views...");
+    const projectViewsData = [
+      { projectId: "project-1", userId: "mock-user-2", ipAddress: "192.168.1.1" },
+      { projectId: "project-1", userId: "mock-user-3", ipAddress: "192.168.1.2" },
+      { projectId: "project-1", userId: "mock-user-4", ipAddress: "192.168.1.3" },
+      { projectId: "project-1", userId: "mock-user-5", ipAddress: "192.168.1.4" },
+      { projectId: "project-2", userId: "mock-user-1", ipAddress: "192.168.1.5" },
+      { projectId: "project-2", userId: "mock-user-3", ipAddress: "192.168.1.6" },
+      { projectId: "project-3", userId: "mock-user-1", ipAddress: "192.168.1.7" },
+      { projectId: "project-3", userId: "mock-user-2", ipAddress: "192.168.1.8" },
+      { projectId: "project-4", userId: "mock-user-1", ipAddress: "192.168.1.9" },
+      { projectId: "project-5", userId: "mock-user-3", ipAddress: "192.168.1.10" },
+    ];
+    await db.insert(projectViews).values(projectViewsData);
+
+    // Seed post likes
+    console.log("💙 Creating post likes...");
+    const postLikesData = [
+      { postId: "post-1", userId: "mock-user-2" },
+      { postId: "post-1", userId: "mock-user-3" },
+      { postId: "post-2", userId: "mock-user-1" },
+      { postId: "post-2", userId: "mock-user-4" },
+      { postId: "post-3", userId: "mock-user-2" },
+      { postId: "post-3", userId: "mock-user-5" },
+    ];
+    await db.insert(postLikes).values(postLikesData);
 
     console.log("🎉 Database seeding completed successfully!");
 

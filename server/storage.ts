@@ -5,6 +5,7 @@ import {
   comments,
   projectLikes,
   projectBookmarks,
+  projectViews,
   postLikes,
   type User,
   type UpsertUser,
@@ -19,6 +20,8 @@ import {
   type InsertComment,
   type ProjectLike,
   type ProjectBookmark,
+  type ProjectView,
+  type InsertProjectView,
   type PostLike,
 } from "@shared/schema";
 import { db } from "./db";
@@ -35,7 +38,7 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: string, userId: string): Promise<boolean>;
-  incrementProjectViews(id: string): Promise<void>;
+  trackProjectView(projectId: string, userId?: string, ipAddress?: string): Promise<void>;
   getUserProjects(userId: string): Promise<ProjectWithUser[]>;
   
   // Project interaction operations
@@ -96,6 +99,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string }): Promise<ProjectWithUser[]> {
+    // Base query with aggregated counts
     let query = db
       .select({
         id: projects.id,
@@ -107,16 +111,20 @@ export class DatabaseStorage implements IStorage {
         sourceUrl: projects.sourceUrl,
         tags: projects.tags,
         techStack: projects.techStack,
-        viewCount: projects.viewCount,
-        likeCount: projects.likeCount,
-        commentCount: projects.commentCount,
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         user: users,
+        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
+        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
-      .leftJoin(users, eq(projects.userId, users.id));
+      .leftJoin(users, eq(projects.userId, users.id))
+      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
+      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
+      .leftJoin(comments, eq(projects.id, comments.projectId))
+      .groupBy(projects.id, users.id);
 
     let conditions = [];
 
@@ -149,13 +157,13 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
 
-    // Apply sorting
+    // Apply sorting - using aggregated counts
     switch (filters?.sortBy) {
       case 'likes':
-        query = query.orderBy(desc(projects.likeCount));
+        query = query.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`));
         break;
       case 'views':
-        query = query.orderBy(desc(projects.viewCount));
+        query = query.orderBy(desc(sql`COALESCE(${count(projectViews.id)}, 0)`));
         break;
       case 'oldest':
         query = query.orderBy(asc(projects.createdAt));
@@ -179,17 +187,21 @@ export class DatabaseStorage implements IStorage {
         sourceUrl: projects.sourceUrl,
         tags: projects.tags,
         techStack: projects.techStack,
-        viewCount: projects.viewCount,
-        likeCount: projects.likeCount,
-        commentCount: projects.commentCount,
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         user: users,
+        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
+        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
-      .where(eq(projects.id, id));
+      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
+      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
+      .leftJoin(comments, eq(projects.id, comments.projectId))
+      .where(eq(projects.id, id))
+      .groupBy(projects.id, users.id);
     return project;
   }
 
@@ -217,11 +229,31 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  async incrementProjectViews(id: string): Promise<void> {
-    await db
-      .update(projects)
-      .set({ viewCount: sql`${projects.viewCount} + 1` })
-      .where(eq(projects.id, id));
+  async trackProjectView(projectId: string, userId?: string, ipAddress?: string): Promise<void> {
+    // Check if this view should be counted (avoid duplicate views from same user/IP in short timeframe)
+    const recentView = await db
+      .select()
+      .from(projectViews)
+      .where(
+        and(
+          eq(projectViews.projectId, projectId),
+          userId 
+            ? eq(projectViews.userId, userId)
+            : ipAddress
+              ? eq(projectViews.ipAddress, ipAddress)
+              : sql`FALSE`,
+          sql`${projectViews.createdAt} > NOW() - INTERVAL '1 hour'`
+        )
+      )
+      .limit(1);
+    
+    if (recentView.length === 0) {
+      await db.insert(projectViews).values({
+        projectId,
+        userId,
+        ipAddress,
+      });
+    }
   }
 
   async getUserProjects(userId: string): Promise<ProjectWithUser[]> {
@@ -236,27 +268,27 @@ export class DatabaseStorage implements IStorage {
         sourceUrl: projects.sourceUrl,
         tags: projects.tags,
         techStack: projects.techStack,
-        viewCount: projects.viewCount,
-        likeCount: projects.likeCount,
-        commentCount: projects.commentCount,
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         user: users,
+        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
+        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
+      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
+      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
+      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projects.userId, userId))
+      .groupBy(projects.id, users.id)
       .orderBy(desc(projects.createdAt));
   }
 
   async likeProject(projectId: string, userId: string): Promise<boolean> {
     try {
       await db.insert(projectLikes).values({ projectId, userId });
-      await db
-        .update(projects)
-        .set({ likeCount: sql`${projects.likeCount} + 1` })
-        .where(eq(projects.id, projectId));
       return true;
     } catch {
       return false;
@@ -268,14 +300,7 @@ export class DatabaseStorage implements IStorage {
       .delete(projectLikes)
       .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
     
-    if (result.rowCount > 0) {
-      await db
-        .update(projects)
-        .set({ likeCount: sql`${projects.likeCount} - 1` })
-        .where(eq(projects.id, projectId));
-      return true;
-    }
-    return false;
+    return result.rowCount > 0;
   }
 
   async isProjectLiked(projectId: string, userId: string): Promise<boolean> {
@@ -322,18 +347,22 @@ export class DatabaseStorage implements IStorage {
         sourceUrl: projects.sourceUrl,
         tags: projects.tags,
         techStack: projects.techStack,
-        viewCount: projects.viewCount,
-        likeCount: projects.likeCount,
-        commentCount: projects.commentCount,
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         user: users,
+        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
+        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projectBookmarks)
       .leftJoin(projects, eq(projectBookmarks.projectId, projects.id))
       .leftJoin(users, eq(projects.userId, users.id))
+      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
+      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
+      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projectBookmarks.userId, userId))
+      .groupBy(projects.id, users.id, projectBookmarks.createdAt)
       .orderBy(desc(projectBookmarks.createdAt));
   }
 
@@ -345,15 +374,18 @@ export class DatabaseStorage implements IStorage {
         title: communityPosts.title,
         content: communityPosts.content,
         isPinned: communityPosts.isPinned,
-        likeCount: communityPosts.likeCount,
-        commentCount: communityPosts.commentCount,
         userId: communityPosts.userId,
         createdAt: communityPosts.createdAt,
         updatedAt: communityPosts.updatedAt,
         user: users,
+        likeCount: sql<number>`COALESCE(${count(postLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(communityPosts)
       .leftJoin(users, eq(communityPosts.userId, users.id))
+      .leftJoin(postLikes, eq(communityPosts.id, postLikes.postId))
+      .leftJoin(comments, eq(communityPosts.id, comments.postId))
+      .groupBy(communityPosts.id, users.id)
       .orderBy(desc(communityPosts.isPinned), desc(communityPosts.createdAt))
       .limit(limit)
       .offset(offset);
@@ -366,16 +398,19 @@ export class DatabaseStorage implements IStorage {
         title: communityPosts.title,
         content: communityPosts.content,
         isPinned: communityPosts.isPinned,
-        likeCount: communityPosts.likeCount,
-        commentCount: communityPosts.commentCount,
         userId: communityPosts.userId,
         createdAt: communityPosts.createdAt,
         updatedAt: communityPosts.updatedAt,
         user: users,
+        likeCount: sql<number>`COALESCE(${count(postLikes.id)}, 0)`.as('likeCount'),
+        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(communityPosts)
       .leftJoin(users, eq(communityPosts.userId, users.id))
-      .where(eq(communityPosts.id, id));
+      .leftJoin(postLikes, eq(communityPosts.id, postLikes.postId))
+      .leftJoin(comments, eq(communityPosts.id, comments.postId))
+      .where(eq(communityPosts.id, id))
+      .groupBy(communityPosts.id, users.id);
     return post;
   }
 
@@ -406,10 +441,6 @@ export class DatabaseStorage implements IStorage {
   async likeCommunityPost(postId: string, userId: string): Promise<boolean> {
     try {
       await db.insert(postLikes).values({ postId, userId });
-      await db
-        .update(communityPosts)
-        .set({ likeCount: sql`${communityPosts.likeCount} + 1` })
-        .where(eq(communityPosts.id, postId));
       return true;
     } catch {
       return false;
@@ -421,14 +452,7 @@ export class DatabaseStorage implements IStorage {
       .delete(postLikes)
       .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
     
-    if (result.rowCount > 0) {
-      await db
-        .update(communityPosts)
-        .set({ likeCount: sql`${communityPosts.likeCount} - 1` })
-        .where(eq(communityPosts.id, postId));
-      return true;
-    }
-    return false;
+    return result.rowCount > 0;
   }
 
   async isCommunityPostLiked(postId: string, userId: string): Promise<boolean> {
@@ -481,50 +505,15 @@ export class DatabaseStorage implements IStorage {
       .values(comment)
       .returning();
 
-    // Update comment count
-    if (comment.projectId) {
-      await db
-        .update(projects)
-        .set({ commentCount: sql`${projects.commentCount} + 1` })
-        .where(eq(projects.id, comment.projectId));
-    } else if (comment.postId) {
-      await db
-        .update(communityPosts)
-        .set({ commentCount: sql`${communityPosts.commentCount} + 1` })
-        .where(eq(communityPosts.id, comment.postId));
-    }
-
     return newComment;
   }
 
   async deleteComment(id: string, userId: string): Promise<boolean> {
-    const [comment] = await db
-      .select()
-      .from(comments)
-      .where(and(eq(comments.id, id), eq(comments.userId, userId)));
-
-    if (!comment) return false;
-
     const result = await db
       .delete(comments)
       .where(and(eq(comments.id, id), eq(comments.userId, userId)));
 
-    if (result.rowCount > 0) {
-      // Update comment count
-      if (comment.projectId) {
-        await db
-          .update(projects)
-          .set({ commentCount: sql`${projects.commentCount} - 1` })
-          .where(eq(projects.id, comment.projectId));
-      } else if (comment.postId) {
-        await db
-          .update(communityPosts)
-          .set({ commentCount: sql`${communityPosts.commentCount} - 1` })
-          .where(eq(communityPosts.id, comment.postId));
-      }
-      return true;
-    }
-    return false;
+    return result.rowCount > 0;
   }
 
   async getAnalytics(): Promise<{

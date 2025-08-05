@@ -41,15 +41,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/projects/:id', async (req, res) => {
+  app.get('/api/projects/:id', async (req: any, res) => {
     try {
       const project = await storage.getProject(req.params.id);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      // Increment view count
-      await storage.incrementProjectViews(req.params.id);
+      // Track view (with user ID if authenticated, otherwise IP address)
+      const userId = req.user?.claims?.sub;
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      await storage.trackProjectView(req.params.id, userId, ipAddress);
       
       res.json(project);
     } catch (error) {
