@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, projects, communityPosts, comments, projectLikes, postLikes } from "@shared/schema";
+import { users, projects, communityPosts, comments, projectLikes, projectViews, postLikes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 const mockUsers = [
@@ -52,7 +52,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/alexkim/taskflow",
     tags: ["productivity", "ai", "mobile"],
     techStack: ["React Native", "Node.js", "OpenAI", "PostgreSQL"],
-    isFeatured: true,
   },
   {
     id: "project-2", 
@@ -77,7 +76,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/davidrodriguez/ecotracker",
     tags: ["sustainability", "lifestyle", "environment"],
     techStack: ["Vue.js", "Express", "MongoDB", "Chart.js"],
-    isFeatured: true,
   },
   {
     id: "project-4",
@@ -102,7 +100,6 @@ const mockProjects = [
     sourceUrl: "https://github.com/ryanpark/devlink",
     tags: ["social", "networking", "collaboration"],
     techStack: ["Next.js", "GraphQL", "Prisma", "PostgreSQL"],
-    isFeatured: true,
   },
   {
     id: "project-6",
@@ -202,7 +199,21 @@ export async function seedDatabase() {
     ];
     await db.insert(projectLikes).values(projectLikesData);
 
-
+    // Seed project views
+    console.log("👀 Creating project views...");
+    const projectViewsData = [
+      { projectId: "project-1", userId: "mock-user-2", ipAddress: "192.168.1.1" },
+      { projectId: "project-1", userId: "mock-user-3", ipAddress: "192.168.1.2" },
+      { projectId: "project-1", userId: "mock-user-4", ipAddress: "192.168.1.3" },
+      { projectId: "project-1", userId: "mock-user-5", ipAddress: "192.168.1.4" },
+      { projectId: "project-2", userId: "mock-user-1", ipAddress: "192.168.1.5" },
+      { projectId: "project-2", userId: "mock-user-3", ipAddress: "192.168.1.6" },
+      { projectId: "project-3", userId: "mock-user-1", ipAddress: "192.168.1.7" },
+      { projectId: "project-3", userId: "mock-user-2", ipAddress: "192.168.1.8" },
+      { projectId: "project-4", userId: "mock-user-1", ipAddress: "192.168.1.9" },
+      { projectId: "project-5", userId: "mock-user-3", ipAddress: "192.168.1.10" },
+    ];
+    await db.insert(projectViews).values(projectViewsData);
 
     // Seed post likes
     console.log("💙 Creating post likes...");
