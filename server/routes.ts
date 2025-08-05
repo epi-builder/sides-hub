@@ -5,7 +5,6 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { insertProjectSchema, insertCommunityPostSchema, insertCommentSchema } from "@shared/schema";
-import { syncAllCounts, syncSingleProjectCounts, syncSinglePostCounts } from "./countSync";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -382,21 +381,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting thumbnail:", error);
       res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Count synchronization endpoint (admin/maintenance)
-  app.post('/api/admin/sync-counts', async (req, res) => {
-    try {
-      console.log("🔄 Starting manual count synchronization...");
-      const result = await syncAllCounts();
-      res.json({
-        message: "Count synchronization completed",
-        ...result
-      });
-    } catch (error) {
-      console.error("Error during count synchronization:", error);
-      res.status(500).json({ message: "Failed to sync counts", error: String(error) });
     }
   });
 
