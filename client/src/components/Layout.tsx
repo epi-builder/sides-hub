@@ -31,7 +31,7 @@ export function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: "Projects", href: "/", current: location === "/" },
     { name: "Community", href: "/community", current: location === "/community" },
-    { name: "Dashboard", href: "/dashboard", current: location === "/dashboard" },
+    ...(isAuthenticated ? [{ name: "Dashboard", href: "/dashboard", current: location === "/dashboard" }] : []),
   ];
 
   return (
@@ -255,7 +255,9 @@ export function Layout({ children }: LayoutProps) {
               <h3 className="font-semibold mb-4">Community</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="/" className="hover:text-primary transition-colors">Browse Projects</Link></li>
-                <li><a href="#" onClick={() => setIsSubmissionModalOpen(true)} className="hover:text-primary transition-colors cursor-pointer">Submit Project</a></li>
+                {isAuthenticated && (
+                  <li><a href="#" onClick={() => setIsSubmissionModalOpen(true)} className="hover:text-primary transition-colors cursor-pointer">Submit Project</a></li>
+                )}
                 <li><Link href="/community" className="hover:text-primary transition-colors">Community Board</Link></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Guidelines</a></li>
               </ul>
