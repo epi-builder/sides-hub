@@ -99,7 +99,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string }): Promise<ProjectWithUser[]> {
-    // Base query with aggregated counts
+    // Use cached counts for better performance - no joins needed!
     let query = db
       .select({
         id: projects.id,
@@ -114,17 +114,15 @@ export class DatabaseStorage implements IStorage {
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
+        // Use cached counts for performance
+        viewCount: projects.viewCount,
+        likeCount: projects.likeCount,
+        commentCount: projects.commentCount,
+        countsLastUpdated: projects.countsLastUpdated,
         user: users,
-        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
-      .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
-      .groupBy(projects.id, users.id);
+      .leftJoin(users, eq(projects.userId, users.id));
 
     let conditions = [];
 
@@ -157,13 +155,13 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
 
-    // Apply sorting - using aggregated counts
+    // Apply sorting - using cached counts for performance
     switch (filters?.sortBy) {
       case 'likes':
-        query = query.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`));
+        query = query.orderBy(desc(projects.likeCount));
         break;
       case 'views':
-        query = query.orderBy(desc(sql`COALESCE(${count(projectViews.id)}, 0)`));
+        query = query.orderBy(desc(projects.viewCount));
         break;
       case 'oldest':
         query = query.orderBy(asc(projects.createdAt));
@@ -190,18 +188,16 @@ export class DatabaseStorage implements IStorage {
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
+        // Use cached counts for performance
+        viewCount: projects.viewCount,
+        likeCount: projects.likeCount,
+        commentCount: projects.commentCount,
+        countsLastUpdated: projects.countsLastUpdated,
         user: users,
-        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
-      .where(eq(projects.id, id))
-      .groupBy(projects.id, users.id);
+      .where(eq(projects.id, id));
     return project;
   }
 
@@ -271,18 +267,16 @@ export class DatabaseStorage implements IStorage {
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
+        // Use cached counts for performance
+        viewCount: projects.viewCount,
+        likeCount: projects.likeCount,
+        commentCount: projects.commentCount,
+        countsLastUpdated: projects.countsLastUpdated,
         user: users,
-        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projects.userId, userId))
-      .groupBy(projects.id, users.id)
       .orderBy(desc(projects.createdAt));
   }
 
@@ -350,19 +344,17 @@ export class DatabaseStorage implements IStorage {
         userId: projects.userId,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
+        // Use cached counts for performance
+        viewCount: projects.viewCount,
+        likeCount: projects.likeCount,
+        commentCount: projects.commentCount,
+        countsLastUpdated: projects.countsLastUpdated,
         user: users,
-        viewCount: sql<number>`COALESCE(${count(projectViews.id)}, 0)`.as('viewCount'),
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(projectBookmarks)
       .leftJoin(projects, eq(projectBookmarks.projectId, projects.id))
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectViews, eq(projects.id, projectViews.projectId))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projectBookmarks.userId, userId))
-      .groupBy(projects.id, users.id, projectBookmarks.createdAt)
       .orderBy(desc(projectBookmarks.createdAt));
   }
 
@@ -377,15 +369,14 @@ export class DatabaseStorage implements IStorage {
         userId: communityPosts.userId,
         createdAt: communityPosts.createdAt,
         updatedAt: communityPosts.updatedAt,
+        // Use cached counts for performance
+        likeCount: communityPosts.likeCount,
+        commentCount: communityPosts.commentCount,
+        countsLastUpdated: communityPosts.countsLastUpdated,
         user: users,
-        likeCount: sql<number>`COALESCE(${count(postLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(communityPosts)
       .leftJoin(users, eq(communityPosts.userId, users.id))
-      .leftJoin(postLikes, eq(communityPosts.id, postLikes.postId))
-      .leftJoin(comments, eq(communityPosts.id, comments.postId))
-      .groupBy(communityPosts.id, users.id)
       .orderBy(desc(communityPosts.isPinned), desc(communityPosts.createdAt))
       .limit(limit)
       .offset(offset);
@@ -401,16 +392,15 @@ export class DatabaseStorage implements IStorage {
         userId: communityPosts.userId,
         createdAt: communityPosts.createdAt,
         updatedAt: communityPosts.updatedAt,
+        // Use cached counts for performance
+        likeCount: communityPosts.likeCount,
+        commentCount: communityPosts.commentCount,
+        countsLastUpdated: communityPosts.countsLastUpdated,
         user: users,
-        likeCount: sql<number>`COALESCE(${count(postLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
       })
       .from(communityPosts)
       .leftJoin(users, eq(communityPosts.userId, users.id))
-      .leftJoin(postLikes, eq(communityPosts.id, postLikes.postId))
-      .leftJoin(comments, eq(communityPosts.id, comments.postId))
-      .where(eq(communityPosts.id, id))
-      .groupBy(communityPosts.id, users.id);
+      .where(eq(communityPosts.id, id));
     return post;
   }
 

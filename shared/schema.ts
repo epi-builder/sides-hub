@@ -47,6 +47,12 @@ export const projects = pgTable("projects", {
   tags: text("tags").array(),
   techStack: text("tech_stack").array(),
   userId: varchar("user_id").notNull().references(() => users.id),
+  // Cached counts for performance (updated via batch jobs for eventual consistency)
+  viewCount: integer("view_count").notNull().default(0),
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  // Timestamp to track when counts were last updated
+  countsLastUpdated: timestamp("counts_last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -83,6 +89,11 @@ export const communityPosts = pgTable("community_posts", {
   content: text("content").notNull(),
   isPinned: boolean("is_pinned").default(false),
   userId: varchar("user_id").notNull().references(() => users.id),
+  // Cached counts for performance (updated via batch jobs for eventual consistency)
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  // Timestamp to track when counts were last updated
+  countsLastUpdated: timestamp("counts_last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
