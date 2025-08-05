@@ -68,6 +68,15 @@ export const projectBookmarks = pgTable("project_bookmarks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project views table
+export const projectViews = pgTable("project_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 // Community posts table
@@ -105,6 +114,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
   projectLikes: many(projectLikes),
   projectBookmarks: many(projectBookmarks),
+  projectViews: many(projectViews),
   communityPosts: many(communityPosts),
   postLikes: many(postLikes),
   comments: many(comments),
@@ -117,6 +127,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   likes: many(projectLikes),
   bookmarks: many(projectBookmarks),
+  views: many(projectViews),
   comments: many(comments),
 }));
 
@@ -140,6 +151,17 @@ export const projectBookmarksRelations = relations(projectBookmarks, ({ one }) =
   }),
   user: one(users, {
     fields: [projectBookmarks.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectViewsRelations = relations(projectViews, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectViews.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectViews.userId],
     references: [users.id],
   }),
 }));
@@ -217,6 +239,11 @@ export const insertCommentSchema = createInsertSchema(comments).omit({
   updatedAt: true,
 });
 
+export const insertProjectViewSchema = createInsertSchema(projectViews).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -242,3 +269,5 @@ export type ProjectBookmark = typeof projectBookmarks.$inferSelect;
 export type PostLike = typeof postLikes.$inferSelect;
 export type InsertProjectLike = z.infer<typeof insertProjectLikeSchema>;
 export type InsertPostLike = z.infer<typeof insertPostLikeSchema>;
+export type ProjectView = typeof projectViews.$inferSelect;
+export type InsertProjectView = z.infer<typeof insertProjectViewSchema>;

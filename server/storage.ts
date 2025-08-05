@@ -5,6 +5,7 @@ import {
   comments,
   projectLikes,
   projectBookmarks,
+  projectViews,
   postLikes,
   type User,
   type UpsertUser,
@@ -19,6 +20,8 @@ import {
   type InsertComment,
   type ProjectLike,
   type ProjectBookmark,
+  type ProjectView,
+  type InsertProjectView,
   type PostLike,
 } from "@shared/schema";
 import { db } from "./db";
@@ -38,6 +41,7 @@ export interface IStorage {
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: string, userId: string): Promise<boolean>;
   getUserProjects(userId: string): Promise<ProjectWithUser[]>;
+  trackProjectView(projectId: string, userId?: string, ipAddress?: string): Promise<void>;
   
   // Project interaction operations
   likeProject(projectId: string, userId: string): Promise<boolean>;
@@ -97,7 +101,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string }): Promise<ProjectWithUser[]> {
-    let query = db
+    let baseQuery = db
       .select({
         id: projects.id,
         title: projects.title,
@@ -150,26 +154,27 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      baseQuery = baseQuery.where(and(...conditions)) as any;
     }
 
     // Apply sorting
+    let results;
     switch (filters?.sortBy) {
       case 'likes':
-        query = query.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`));
+        results = await baseQuery.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`));
         break;
       case 'oldest':
-        query = query.orderBy(asc(projects.createdAt));
+        results = await baseQuery.orderBy(asc(projects.createdAt));
         break;
       default:
-        query = query.orderBy(desc(projects.createdAt));
+        results = await baseQuery.orderBy(desc(projects.createdAt));
     }
 
-    return query.execute();
+    return results.filter(result => result.user !== null) as ProjectWithUser[];
   }
 
   async getFeaturedProjects(): Promise<ProjectWithUser[]> {
-    return db
+    const results = await db
       .select({
         id: projects.id,
         title: projects.title,
@@ -196,6 +201,7 @@ export class DatabaseStorage implements IStorage {
       .groupBy(projects.id, users.id)
       .orderBy(desc(projects.createdAt))
       .limit(6);
+    return results.filter(result => result.user !== null) as ProjectWithUser[];
   }
 
   async getTrendingProjects(): Promise<ProjectWithUser[]> {
@@ -203,7 +209,7 @@ export class DatabaseStorage implements IStorage {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    return db
+    const results = await db
       .select({
         id: projects.id,
         title: projects.title,
@@ -229,6 +235,7 @@ export class DatabaseStorage implements IStorage {
       .groupBy(projects.id, users.id)
       .orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0) + COALESCE(${count(comments.id)}, 0)`))
       .limit(8);
+    return results.filter(result => result.user !== null) as ProjectWithUser[];
   }
 
   async getProject(id: string): Promise<ProjectWithUser | undefined> {
@@ -257,7 +264,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projects.id, id))
       .groupBy(projects.id, users.id);
-    return project;
+    return project && project.user ? project as ProjectWithUser : undefined;
   }
 
   async createProject(project: InsertProject): Promise<Project> {
@@ -281,13 +288,13 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(projects)
       .where(and(eq(projects.id, id), eq(projects.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
 
 
   async getUserProjects(userId: string): Promise<ProjectWithUser[]> {
-    return db
+    const results = await db
       .select({
         id: projects.id,
         title: projects.title,
@@ -313,6 +320,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projects.userId, userId))
       .groupBy(projects.id, users.id)
       .orderBy(desc(projects.createdAt));
+    return results.filter(result => result.user !== null) as ProjectWithUser[];
+  }
+
+  async trackProjectView(projectId: string, userId?: string, ipAddress?: string): Promise<void> {
+    try {
+      await db.insert(projectViews).values({
+        projectId,
+        userId: userId || null,
+        ipAddress: ipAddress || null,
+      });
+    } catch (error) {
+      // Silently fail if view tracking fails (e.g., duplicate views)
+      console.log("View tracking failed:", error);
+    }
   }
 
   async likeProject(projectId: string, userId: string): Promise<boolean> {
@@ -329,7 +350,7 @@ export class DatabaseStorage implements IStorage {
       .delete(projectLikes)
       .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async isProjectLiked(projectId: string, userId: string): Promise<boolean> {
@@ -353,7 +374,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(projectBookmarks)
       .where(and(eq(projectBookmarks.projectId, projectId), eq(projectBookmarks.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async isProjectBookmarked(projectId: string, userId: string): Promise<boolean> {
@@ -365,7 +386,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserBookmarks(userId: string): Promise<ProjectWithUser[]> {
-    return db
+    const results = await db
       .select({
         id: projects.id,
         title: projects.title,
@@ -392,11 +413,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projectBookmarks.userId, userId))
       .groupBy(projects.id, users.id, projectBookmarks.createdAt)
       .orderBy(desc(projectBookmarks.createdAt));
+    return results.filter(result => result.user !== null) as ProjectWithUser[];
   }
 
   async getCommunityPosts(page = 1, limit = 10): Promise<CommunityPostWithUser[]> {
     const offset = (page - 1) * limit;
-    return db
+    const results = await db
       .select({
         id: communityPosts.id,
         title: communityPosts.title,
@@ -417,6 +439,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(communityPosts.isPinned), desc(communityPosts.createdAt))
       .limit(limit)
       .offset(offset);
+    return results.filter(result => result.user !== null) as CommunityPostWithUser[];
   }
 
   async getCommunityPost(id: string): Promise<CommunityPostWithUser | undefined> {
@@ -439,7 +462,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(comments, eq(communityPosts.id, comments.postId))
       .where(eq(communityPosts.id, id))
       .groupBy(communityPosts.id, users.id);
-    return post;
+    return post && post.user ? post as CommunityPostWithUser : undefined;
   }
 
   async createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost> {
@@ -463,7 +486,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(communityPosts)
       .where(and(eq(communityPosts.id, id), eq(communityPosts.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async likeCommunityPost(postId: string, userId: string): Promise<boolean> {
@@ -480,7 +503,7 @@ export class DatabaseStorage implements IStorage {
       .delete(postLikes)
       .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async isCommunityPostLiked(postId: string, userId: string): Promise<boolean> {
@@ -492,7 +515,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProjectComments(projectId: string): Promise<CommentWithUser[]> {
-    return db
+    const results = await db
       .select({
         id: comments.id,
         content: comments.content,
@@ -507,10 +530,11 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(comments.userId, users.id))
       .where(eq(comments.projectId, projectId))
       .orderBy(desc(comments.createdAt));
+    return results.filter(result => result.user !== null) as CommentWithUser[];
   }
 
   async getPostComments(postId: string): Promise<CommentWithUser[]> {
-    return db
+    const results = await db
       .select({
         id: comments.id,
         content: comments.content,
@@ -525,6 +549,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(comments.userId, users.id))
       .where(eq(comments.postId, postId))
       .orderBy(desc(comments.createdAt));
+    return results.filter(result => result.user !== null) as CommentWithUser[];
   }
 
   async createComment(comment: InsertComment): Promise<Comment> {
@@ -541,7 +566,7 @@ export class DatabaseStorage implements IStorage {
       .delete(comments)
       .where(and(eq(comments.id, id), eq(comments.userId, userId)));
 
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAnalytics(): Promise<{
