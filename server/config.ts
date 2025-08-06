@@ -6,6 +6,7 @@ export interface ServerConfig {
   port: number;
   host: string;
   nodeEnv: string;
+  appEnv: string;
   database: {
     url: string;
   };
@@ -55,6 +56,7 @@ export function getServerConfig(): ServerConfig {
       '  • SESSION_SECRET: Secret key for session encryption',
       '',
       '🔧 Optional environment variables:',
+      '  • APP_ENV: Application environment (defaults to "dev", use "prod" for production)',
       '  • ISSUER_URL: OpenID Connect issuer (defaults to https://replit.com/oidc)',
       '  • PORT: Server port (defaults to 5000)',
       '  • GOOGLE_CLOUD_BUCKET_NAME: For file uploads',
@@ -78,6 +80,7 @@ export function getServerConfig(): ServerConfig {
     port: parseInt(process.env.PORT || '5000', 10),
     host: '0.0.0.0',
     nodeEnv: process.env.NODE_ENV || 'development',
+    appEnv: process.env.APP_ENV || 'dev',
     database: {
       url: requiredVars.DATABASE_URL!,
     },

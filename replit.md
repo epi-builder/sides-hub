@@ -56,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 - **Code Quality**: ESLint and Prettier for consistent code formatting
 - **Build System**: Separate build processes for client (Vite) and server (esbuild)
 - **Development Server**: Hot module replacement with Vite dev server integration
+- **Environment Configuration**: APP_ENV variable controls seeding behavior (dev/prod)
 
 ## External Dependencies
 
@@ -88,3 +89,12 @@ Preferred communication style: Simple, everyday language.
 - **Passport.js**: Authentication middleware with OpenID Connect strategy
 - **express-session**: Session middleware with PostgreSQL storage backend
 - **connect-pg-simple**: PostgreSQL session store for persistent user sessions
+
+## Environment Configuration
+
+The application uses an APP_ENV environment variable to control deployment behavior:
+
+- **Development (APP_ENV=dev)**: Enables database seeding with mock data for local development
+- **Production (APP_ENV=prod)**: Skips database seeding to prevent overwriting production data
+
+Other key environment variables include DATABASE_URL, REPLIT_DOMAINS, REPL_ID, and SESSION_SECRET for core functionality, with optional variables for cloud storage integration.

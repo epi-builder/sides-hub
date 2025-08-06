@@ -43,8 +43,10 @@ app.use((req, res, next) => {
   const config = getServerConfig();
   validateDeploymentConfig(config);
   
-  // Initialize database with mock data
-  await seedDatabase();
+  // Initialize database with mock data (only in dev environment)
+  if (config.appEnv !== 'prod') {
+    await seedDatabase();
+  }
   
   const server = await registerRoutes(app, config);
 
