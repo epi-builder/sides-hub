@@ -7,38 +7,35 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
-}
+import type { ServerConfig } from "./config";
 
 const getOidcConfig = memoize(
-  async () => {
+  async (config: ServerConfig) => {
     return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      new URL(config.auth.issuerUrl),
+      config.auth.replId
     );
   },
   { maxAge: 3600 * 1000 }
 );
 
-export function getSession() {
+export function getSession(config: ServerConfig) {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: config.database.url,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: config.auth.sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: config.nodeEnv === 'production',
       maxAge: sessionTtl,
     },
   });
@@ -66,13 +63,13 @@ async function upsertUser(
   });
 }
 
-export async function setupAuth(app: Express) {
+export async function setupAuth(app: Express, serverConfig: ServerConfig) {
   app.set("trust proxy", 1);
-  app.use(getSession());
+  app.use(getSession(serverConfig));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const config = await getOidcConfig();
+  const config = await getOidcConfig(serverConfig);
 
   const verify: VerifyFunction = async (
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
@@ -84,8 +81,7 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  for (const domain of serverConfig.auth.replitDomains) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -119,7 +115,7 @@ export async function setupAuth(app: Express) {
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
+          client_id: serverConfig.auth.replId,
           post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
         }).href
       );
@@ -146,7 +142,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    const config = await getOidcConfig();
+    // We need to pass serverConfig here, but we don't have access to it in this middleware
+    // For now, we'll keep the original implementation and handle this in the updated index.ts
+    const config = await client.discovery(
+      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
+      process.env.REPL_ID!
+    );
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
     return next();
