@@ -35,6 +35,7 @@ export function getServerConfig(): ServerConfig {
     REPLIT_DOMAINS: process.env.REPLIT_DOMAINS,
     REPL_ID: process.env.REPL_ID,
     SESSION_SECRET: process.env.SESSION_SECRET,
+    APP_ENV: process.env.APP_ENV,
   };
 
   // Check for missing required variables
@@ -54,9 +55,9 @@ export function getServerConfig(): ServerConfig {
       '  • REPLIT_DOMAINS: Comma-separated list of allowed domains',
       '  • REPL_ID: Replit application identifier',
       '  • SESSION_SECRET: Secret key for session encryption',
+      '  • APP_ENV: Application environment (dev/prod)',
       '',
       '🔧 Optional environment variables:',
-      '  • APP_ENV: Application environment (defaults to "dev", use "prod" for production)',
       '  • ISSUER_URL: OpenID Connect issuer (defaults to https://replit.com/oidc)',
       '  • PORT: Server port (defaults to 5000)',
       '  • GOOGLE_CLOUD_BUCKET_NAME: For file uploads',
@@ -80,7 +81,7 @@ export function getServerConfig(): ServerConfig {
     port: parseInt(process.env.PORT || '5000', 10),
     host: '0.0.0.0',
     nodeEnv: process.env.NODE_ENV || 'development',
-    appEnv: process.env.APP_ENV || 'dev',
+    appEnv: requiredVars.APP_ENV!,
     database: {
       url: requiredVars.DATABASE_URL!,
     },
