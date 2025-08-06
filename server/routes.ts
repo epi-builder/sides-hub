@@ -6,10 +6,11 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { insertProjectSchema, insertCommunityPostSchema, insertCommentSchema } from "@shared/schema";
 import { z } from "zod";
+import type { ServerConfig } from "./config";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, config: ServerConfig): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupAuth(app, config);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
