@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Heart, Eye, MessageCircle, Bookmark, ExternalLink, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ProjectWithUser } from "@shared/schema";
+import type { ProjectWithUser, LikeStatus } from "@shared/schema";
 
 interface ProjectCardProps {
   project: ProjectWithUser;
@@ -23,7 +23,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   const queryClient = useQueryClient();
 
   // Get like and bookmark status
-  const { data: likeStatus } = useQuery({
+  const { data: likeStatus } = useQuery<LikeStatus>({
     queryKey: ["/api/projects", project.id, "like-status"],
     enabled: isAuthenticated,
     retry: false,

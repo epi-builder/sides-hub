@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Users, Heart, MessageSquare } from "lucide-react";
-import type { ProjectWithUser } from "@shared/schema";
+import type { ProjectWithUser, Analytics } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,7 +48,7 @@ export default function Home() {
     queryKey: [apiUrl],
   });
 
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
   });
 

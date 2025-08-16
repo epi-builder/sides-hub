@@ -272,3 +272,17 @@ export type InsertProjectLike = z.infer<typeof insertProjectLikeSchema>;
 export type InsertPostLike = z.infer<typeof insertPostLikeSchema>;
 export type ProjectView = typeof projectViews.$inferSelect;
 export type InsertProjectView = z.infer<typeof insertProjectViewSchema>;
+
+// Analytics type
+export type Analytics = {
+  totalProjects: number;
+  totalUsers: number;
+  totalLikes: number;
+  totalComments: number;
+};
+
+// Like status type
+export type LikeStatus = {
+  isLiked: boolean;
+  isBookmarked: boolean;
+};
