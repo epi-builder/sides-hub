@@ -1,7 +1,8 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupLocalAuth, isLocalAuthenticated } from "./localAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { insertProjectSchema, insertCommunityPostSchema, insertCommentSchema } from "@shared/schema";
@@ -9,11 +10,18 @@ import { z } from "zod";
 import type { ServerConfig } from "./config";
 
 export async function registerRoutes(app: Express, config: ServerConfig): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app, config);
+  // Auth middleware - use local auth for local development, Replit auth otherwise
+  const isLocal = config.appEnv === 'local';
+  const authMiddleware: RequestHandler = isLocal ? isLocalAuthenticated : isAuthenticated;
+  
+  if (isLocal) {
+    await setupLocalAuth(app, config);
+  } else {
+    await setupAuth(app, config);
+  }
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -61,7 +69,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post('/api/projects', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const projectData = insertProjectSchema.parse({ ...req.body, userId });
@@ -76,7 +84,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.put('/api/projects/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/projects/:id', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const project = await storage.getProject(req.params.id);
@@ -97,7 +105,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.delete('/api/projects/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/projects/:id', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.deleteProject(req.params.id, userId);
@@ -114,7 +122,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
   });
 
   // Project interaction routes
-  app.post('/api/projects/:id/like', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:id/like', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.likeProject(req.params.id, userId);
@@ -125,7 +133,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.delete('/api/projects/:id/like', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/projects/:id/like', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.unlikeProject(req.params.id, userId);
@@ -136,7 +144,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.get('/api/projects/:id/like-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:id/like-status', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const isLiked = await storage.isProjectLiked(req.params.id, userId);
@@ -148,7 +156,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post('/api/projects/:id/bookmark', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:id/bookmark', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.bookmarkProject(req.params.id, userId);
@@ -159,7 +167,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.delete('/api/projects/:id/bookmark', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/projects/:id/bookmark', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.unbookmarkProject(req.params.id, userId);
@@ -181,7 +189,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.get('/api/users/me/bookmarks', isAuthenticated, async (req: any, res) => {
+  app.get('/api/users/me/bookmarks', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bookmarks = await storage.getUserBookmarks(userId);
@@ -218,7 +226,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post('/api/community/posts', isAuthenticated, async (req: any, res) => {
+  app.post('/api/community/posts', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const postData = insertCommunityPostSchema.parse({ ...req.body, userId });
@@ -233,7 +241,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post('/api/community/posts/:id/like', isAuthenticated, async (req: any, res) => {
+  app.post('/api/community/posts/:id/like', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.likeCommunityPost(req.params.id, userId);
@@ -244,7 +252,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.delete('/api/community/posts/:id/like', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/community/posts/:id/like', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.unlikeCommunityPost(req.params.id, userId);
@@ -255,7 +263,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.get('/api/community/posts/:id/like-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/community/posts/:id/like-status', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const isLiked = await storage.isCommunityPostLiked(req.params.id, userId);
@@ -287,7 +295,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post('/api/comments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/comments', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const commentData = insertCommentSchema.parse({ ...req.body, userId });
@@ -302,7 +310,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.delete('/api/comments/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/comments/:id', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.deleteComment(req.params.id, userId);
@@ -330,7 +338,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
   });
 
   // Object storage routes
-  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+  app.get("/objects/:objectPath(*)", authMiddleware, async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const objectStorageService = new ObjectStorageService();
     try {
@@ -353,13 +361,13 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
+  app.post("/api/objects/upload", authMiddleware, async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     const uploadURL = await objectStorageService.getObjectEntityUploadURL();
     res.json({ uploadURL });
   });
 
-  app.put("/api/projects/thumbnail", isAuthenticated, async (req: any, res) => {
+  app.put("/api/projects/thumbnail", authMiddleware, async (req: any, res) => {
     if (!req.body.thumbnailUrl) {
       return res.status(400).json({ error: "thumbnailUrl is required" });
     }

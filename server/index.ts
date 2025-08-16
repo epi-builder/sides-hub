@@ -44,7 +44,7 @@ app.use((req, res, next) => {
   const config = getServerConfig();
   validateDeploymentConfig(config);
   
-  // Initialize database with mock data (only in dev environment)
+  // Initialize database with mock data (only in dev/local environments)
   if (config.appEnv !== 'prod') {
     await seedDatabase();
   }

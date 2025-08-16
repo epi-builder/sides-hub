@@ -28,14 +28,20 @@ export interface ServerConfig {
  */
 export function getServerConfig(): ServerConfig {
   const errors: string[] = [];
+  const appEnv = process.env.APP_ENV || 'local';
+  const isLocalDev = appEnv === 'local';
 
   // Required environment variables
   const requiredVars = {
     DATABASE_URL: process.env.DATABASE_URL,
+    SESSION_SECRET: process.env.SESSION_SECRET,
+    APP_ENV: appEnv,
+  };
+
+  // Only require Replit vars in production
+  const replitVars = {
     REPLIT_DOMAINS: process.env.REPLIT_DOMAINS,
     REPL_ID: process.env.REPL_ID,
-    SESSION_SECRET: process.env.SESSION_SECRET,
-    APP_ENV: process.env.APP_ENV,
   };
 
   // Check for missing required variables
@@ -45,17 +51,28 @@ export function getServerConfig(): ServerConfig {
     }
   });
 
+  // Check Replit vars only when not running locally
+  if (!isLocalDev) {
+    Object.entries(replitVars).forEach(([key, value]) => {
+      if (!value || value.trim() === '') {
+        errors.push(`Missing required environment variable: ${key}`);
+      }
+    });
+  }
+
   if (errors.length > 0) {
     const errorMessage = [
       '❌ Application startup failed due to missing environment variables:',
       ...errors.map(err => `  • ${err}`),
       '',
-      '📝 Required environment variables for deployment:',
+      '📝 Required environment variables:',
       '  • DATABASE_URL: PostgreSQL connection string',
+      '  • SESSION_SECRET: Secret key for session encryption',
+      '  • APP_ENV: Application environment (local/dev/prod)',
+      '',
+      '📝 Required for Replit deployment (APP_ENV=dev/prod):',
       '  • REPLIT_DOMAINS: Comma-separated list of allowed domains',
       '  • REPL_ID: Replit application identifier',
-      '  • SESSION_SECRET: Secret key for session encryption',
-      '  • APP_ENV: Application environment (dev/prod)',
       '',
       '🔧 Optional environment variables:',
       '  • ISSUER_URL: OpenID Connect issuer (defaults to https://replit.com/oidc)',
@@ -67,14 +84,18 @@ export function getServerConfig(): ServerConfig {
     throw new Error(errorMessage);
   }
 
-  // Parse REPLIT_DOMAINS
-  const replitDomains = requiredVars.REPLIT_DOMAINS!
-    .split(',')
-    .map(domain => domain.trim())
-    .filter(domain => domain.length > 0);
+  // Parse REPLIT_DOMAINS (provide defaults for local dev)
+  let replitDomains: string[] = ['localhost:5000'];
+  
+  if (!isLocalDev && replitVars.REPLIT_DOMAINS) {
+    replitDomains = replitVars.REPLIT_DOMAINS
+      .split(',')
+      .map(domain => domain.trim())
+      .filter(domain => domain.length > 0);
 
-  if (replitDomains.length === 0) {
-    throw new Error('REPLIT_DOMAINS must contain at least one valid domain');
+    if (replitDomains.length === 0) {
+      throw new Error('REPLIT_DOMAINS must contain at least one valid domain');
+    }
   }
 
   return {
@@ -88,7 +109,7 @@ export function getServerConfig(): ServerConfig {
     auth: {
       replitDomains,
       issuerUrl: process.env.ISSUER_URL || 'https://replit.com/oidc',
-      replId: requiredVars.REPL_ID!,
+      replId: replitVars.REPL_ID || 'local-dev',
       sessionSecret: requiredVars.SESSION_SECRET!,
     },
     storage: {
