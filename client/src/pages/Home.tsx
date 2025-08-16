@@ -336,52 +336,6 @@ export default function Home() {
                 </Card>
               </div>
 
-              {/* Tech Stacks Chart */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Popular Tech Stacks</h3>
-                    <div className="space-y-3">
-                      {analytics.topTechStacks.map((tech, index) => (
-                        <div key={tech.name} className="flex items-center justify-between">
-                          <span className="text-sm">{tech.name}</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-24 bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full" 
-                                style={{ width: `${(tech.count / analytics.topTechStacks[0].count) * 100}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm text-muted-foreground">{tech.count}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Project Categories</h3>
-                    <div className="space-y-3">
-                      {analytics.topTags.map((tag, index) => (
-                        <div key={tag.name} className="flex items-center justify-between">
-                          <span className="text-sm">{tag.name}</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-24 bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-secondary h-2 rounded-full" 
-                                style={{ width: `${(tag.count / analytics.topTags[0].count) * 100}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm text-muted-foreground">{tag.count}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
           </section>
         )}
