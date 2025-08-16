@@ -38,8 +38,9 @@ export function CommunityPost({ post }: CommunityPostProps) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/community/posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/community/posts", post.id, "like-status"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts")
+      });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
