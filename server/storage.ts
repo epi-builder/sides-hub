@@ -117,14 +117,12 @@ export class DatabaseStorage implements IStorage {
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         user: users,
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${projectLikes} WHERE ${projectLikes.projectId} = ${projects.id})`.as('likeCount'),
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.projectId} = ${projects.id})`.as('commentCount'),
+        viewCount: sql<number>`(SELECT COUNT(*) FROM ${projectViews} WHERE ${projectViews.projectId} = ${projects.id})`.as('viewCount'),
       })
       .from(projects)
-      .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
-      .groupBy(projects.id, users.id);
+      .leftJoin(users, eq(projects.userId, users.id));
 
     let conditions = [];
 
@@ -255,15 +253,13 @@ export class DatabaseStorage implements IStorage {
         updatedAt: projects.updatedAt,
         user: users,
         isFeatured: projects.isFeatured,
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${projectLikes} WHERE ${projectLikes.projectId} = ${projects.id})`.as('likeCount'),
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.projectId} = ${projects.id})`.as('commentCount'),
+        viewCount: sql<number>`(SELECT COUNT(*) FROM ${projectViews} WHERE ${projectViews.projectId} = ${projects.id})`.as('viewCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
-      .where(eq(projects.id, id))
-      .groupBy(projects.id, users.id);
+      .where(eq(projects.id, id));
     return project && project.user ? project as ProjectWithUser : undefined;
   }
 
@@ -310,15 +306,13 @@ export class DatabaseStorage implements IStorage {
         updatedAt: projects.updatedAt,
         user: users,
         isFeatured: projects.isFeatured,
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${projectLikes} WHERE ${projectLikes.projectId} = ${projects.id})`.as('likeCount'),
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.projectId} = ${projects.id})`.as('commentCount'),
+        viewCount: sql<number>`(SELECT COUNT(*) FROM ${projectViews} WHERE ${projectViews.projectId} = ${projects.id})`.as('viewCount'),
       })
       .from(projects)
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projects.userId, userId))
-      .groupBy(projects.id, users.id)
       .orderBy(desc(projects.createdAt));
     return results.filter(result => result.user !== null) as ProjectWithUser[];
   }
@@ -402,16 +396,14 @@ export class DatabaseStorage implements IStorage {
         updatedAt: projects.updatedAt,
         user: users,
         isFeatured: projects.isFeatured,
-        likeCount: sql<number>`COALESCE(${count(projectLikes.id)}, 0)`.as('likeCount'),
-        commentCount: sql<number>`COALESCE(${count(comments.id)}, 0)`.as('commentCount'),
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${projectLikes} WHERE ${projectLikes.projectId} = ${projects.id})`.as('likeCount'),
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.projectId} = ${projects.id})`.as('commentCount'),
+        viewCount: sql<number>`(SELECT COUNT(*) FROM ${projectViews} WHERE ${projectViews.projectId} = ${projects.id})`.as('viewCount'),
       })
       .from(projectBookmarks)
       .leftJoin(projects, eq(projectBookmarks.projectId, projects.id))
       .leftJoin(users, eq(projects.userId, users.id))
-      .leftJoin(projectLikes, eq(projects.id, projectLikes.projectId))
-      .leftJoin(comments, eq(projects.id, comments.projectId))
       .where(eq(projectBookmarks.userId, userId))
-      .groupBy(projects.id, users.id, projectBookmarks.createdAt)
       .orderBy(desc(projectBookmarks.createdAt));
     return results.filter(result => result.user !== null) as ProjectWithUser[];
   }

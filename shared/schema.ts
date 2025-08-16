@@ -253,6 +253,7 @@ export type ProjectWithUser = Project & {
   user: User;
   likeCount?: number;
   commentCount?: number;
+  viewCount?: number;
 };
 export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type CommunityPost = typeof communityPosts.$inferSelect;
