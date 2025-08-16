@@ -1,22 +1,6 @@
 # 프로젝트 미완성 기능 및 문제점 정리
 
-## 1. 타입 안전성 문제 (TypeScript 오류)
-
-### Home.tsx
-- **문제**: analytics 객체의 타입 정의 문제로 다음 속성들에 접근할 때 타입 에러 발생
-  - `analytics.totalProjects` (라인 151, 287)
-  - `analytics.totalUsers` (라인 157, 301) 
-  - `analytics.totalLikes` (라인 163, 315)
-  - `analytics.totalComments` (라인 329)
-- **해결방법**: Analytics 타입을 shared/schema.ts에 정의하고 API 응답 타입 지정
-
-### ProjectCard.tsx
-- **문제**: likeStatus 객체의 타입 정의 문제로 다음 속성들에 접근할 때 타입 에러 발생
-  - `likeStatus.isLiked` (라인 100, 239, 244)
-  - `likeStatus.isBookmarked` (라인 108, 164, 169)
-- **해결방법**: LikeStatus 타입을 shared/schema.ts에 정의하고 API 응답 타입 지정
-
-## 2. 기능이 완전히 구현되지 않은 부분
+## 1. 기능이 완전히 구현되지 않은 부분
 
 ### 댓글 시스템 (CommunityPostDetail.tsx)
 - **현재 상태**: 플레이스홀더만 존재
@@ -34,7 +18,7 @@
 - **"Load More Projects" 버튼** (라인 268-270): onClick 핸들러 없음
   - 페이지네이션 기능 구현 필요
 
-## 3. 기능 개선이 필요한 부분
+## 2. 기능 개선이 필요한 부분
 
 ### 페이지네이션 시스템
 - **현재**: "Load More" 버튼이 있지만 기능 없음
@@ -54,13 +38,13 @@
   - Home.tsx에서 모달 상태 관리
   - "Submit Your Project" 버튼에 모달 열기 기능 추가
 
-## 4. 서버 관련 문제
+## 3. 서버 관련 문제
 
 ### 포트 충돌 문제
 - **문제**: 5000번 포트가 이미 사용 중이어서 애플리케이션 실행 실패
 - **해결방법**: 다른 포트 사용하거나 기존 프로세스 종료
 
-## 5. 우선순위별 작업 순서
+## 4. 우선순위별 작업 순서
 
 ### 높은 우선순위
 1. 타입 안전성 문제 해결 (Analytics, LikeStatus 타입 정의)
@@ -77,7 +61,7 @@
 2. 성능 최적화
 3. 추가 기능 개발
 
-## 6. 기타 개선 사항
+## 5. 기타 개선 사항
 
 ### 코드 품질
 - Console.error 로그들이 많이 있음 (정상적인 에러 핸들링이지만 로깅 레벨 조정 고려)
