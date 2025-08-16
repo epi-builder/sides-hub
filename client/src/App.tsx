@@ -10,6 +10,7 @@ import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import ProjectDetail from "@/pages/ProjectDetail";
 import Community from "@/pages/Community";
+import CommunityPostDetail from "@/pages/CommunityPostDetail";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/projects/:id" component={ProjectDetail} />
       <Route path="/community" component={Community} />
+      <Route path="/community/posts/:id" component={CommunityPostDetail} />
       <Route path="/dashboard">
         {isAuthenticated ? <Dashboard /> : <Landing />}
       </Route>
