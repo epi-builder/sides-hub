@@ -1,0 +1,89 @@
+# 프로젝트 미완성 기능 및 문제점 정리
+
+## 1. 타입 안전성 문제 (TypeScript 오류)
+
+### Home.tsx
+- **문제**: analytics 객체의 타입 정의 문제로 다음 속성들에 접근할 때 타입 에러 발생
+  - `analytics.totalProjects` (라인 151, 287)
+  - `analytics.totalUsers` (라인 157, 301) 
+  - `analytics.totalLikes` (라인 163, 315)
+  - `analytics.totalComments` (라인 329)
+- **해결방법**: Analytics 타입을 shared/schema.ts에 정의하고 API 응답 타입 지정
+
+### ProjectCard.tsx
+- **문제**: likeStatus 객체의 타입 정의 문제로 다음 속성들에 접근할 때 타입 에러 발생
+  - `likeStatus.isLiked` (라인 100, 239, 244)
+  - `likeStatus.isBookmarked` (라인 108, 164, 169)
+- **해결방법**: LikeStatus 타입을 shared/schema.ts에 정의하고 API 응답 타입 지정
+
+## 2. 기능이 완전히 구현되지 않은 부분
+
+### 댓글 시스템 (CommunityPostDetail.tsx)
+- **현재 상태**: 플레이스홀더만 존재
+- **라인 87-89**: "Comments feature will be implemented soon." 메시지만 표시
+- **필요한 작업**:
+  - 댓글 작성 폼 구현
+  - 댓글 목록 표시 기능
+  - 댓글 CRUD 기능 (백엔드는 이미 구현됨)
+
+### Home.tsx의 버튼 핸들러 누락
+- **"Submit Your Project" 버튼** (라인 134-136): onClick 핸들러 없음
+  - ProjectSubmissionModal을 열어야 함
+- **"Explore Projects" 버튼** (라인 137-139): onClick 핸들러 없음
+  - 프로젝트 섹션으로 스크롤하거나 특정 동작 필요
+- **"Load More Projects" 버튼** (라인 268-270): onClick 핸들러 없음
+  - 페이지네이션 기능 구현 필요
+
+## 3. 기능 개선이 필요한 부분
+
+### 페이지네이션 시스템
+- **현재**: "Load More" 버튼이 있지만 기능 없음
+- **필요한 작업**:
+  - API에서 페이지네이션 파라미터 지원
+  - 프론트엔드에서 무한 스크롤 또는 페이지 기반 로딩 구현
+
+### 검색 기능
+- **현재**: URL 파라미터로 검색어 처리는 되지만 UI에서 검색 입력 처리가 불완전
+- **필요한 작업**:
+  - Layout.tsx의 검색 입력 필드와 Home.tsx 상태 연동
+  - 실시간 검색 또는 엔터키 검색 구현
+
+### 프로젝트 제출 모달 연동
+- **현재**: ProjectSubmissionModal 컴포넌트는 존재하지만 Home.tsx에서 열리지 않음
+- **필요한 작업**:
+  - Home.tsx에서 모달 상태 관리
+  - "Submit Your Project" 버튼에 모달 열기 기능 추가
+
+## 4. 서버 관련 문제
+
+### 포트 충돌 문제
+- **문제**: 5000번 포트가 이미 사용 중이어서 애플리케이션 실행 실패
+- **해결방법**: 다른 포트 사용하거나 기존 프로세스 종료
+
+## 5. 우선순위별 작업 순서
+
+### 높은 우선순위
+1. 타입 안전성 문제 해결 (Analytics, LikeStatus 타입 정의)
+2. Home.tsx 버튼 핸들러 구현
+3. 포트 충돌 문제 해결
+
+### 중간 우선순위
+1. 댓글 시스템 완전 구현
+2. 페이지네이션 기능 구현
+3. 검색 기능 개선
+
+### 낮은 우선순위
+1. UI/UX 개선
+2. 성능 최적화
+3. 추가 기능 개발
+
+## 6. 기타 개선 사항
+
+### 코드 품질
+- Console.error 로그들이 많이 있음 (정상적인 에러 핸들링이지만 로깅 레벨 조정 고려)
+- 일부 컴포넌트에서 중복 코드 존재
+
+### 사용자 경험
+- 로딩 상태 표시 개선
+- 에러 메시지 사용자 친화적으로 개선
+- 접근성(a11y) 개선 (일부 Dialog에서 Description 누락 경고)
