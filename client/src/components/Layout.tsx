@@ -31,7 +31,6 @@ export function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: "Projects", href: "/", current: location === "/" },
     { name: "Community", href: "/community", current: location === "/community" },
-    ...(isAuthenticated ? [{ name: "Dashboard", href: "/dashboard", current: location === "/dashboard" }] : []),
   ];
 
   return (
