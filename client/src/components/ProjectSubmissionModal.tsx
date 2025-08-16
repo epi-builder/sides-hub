@@ -234,34 +234,31 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
             />
 
             {/* Thumbnail Upload */}
-            <div>
+            <div className="space-y-2">
               <Label>Thumbnail Image *</Label>
-              <div className="mt-2">
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={5242880} // 5MB
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="w-full"
-                >
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
-                    <div className="flex flex-col items-center space-y-2">
-                      <Plus className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <p className="text-muted-foreground">Click to upload or drag and drop</p>
-                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
-                        {thumbnailUrl && (
-                          <p className="text-xs text-primary mt-1">✓ Thumbnail uploaded</p>
-                        )}
-                      </div>
-                    </div>
+              <ObjectUploader
+                maxNumberOfFiles={1}
+                maxFileSize={5242880} // 5MB
+                onGetUploadParameters={handleGetUploadParameters}
+                onComplete={handleUploadComplete}
+                buttonClassName="w-full border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors bg-transparent"
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <Plus className="h-8 w-8 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground">Click to upload or drag and drop</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
+                    {thumbnailUrl && (
+                      <p className="text-xs text-primary mt-1">✓ Thumbnail uploaded</p>
+                    )}
                   </div>
-                </ObjectUploader>
-              </div>
+                </div>
+              </ObjectUploader>
             </div>
 
             {/* Links */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="demoUrl"
@@ -288,6 +285,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                   </FormItem>
                 )}
               />
+              </div>
             </div>
 
             {/* Tags */}
