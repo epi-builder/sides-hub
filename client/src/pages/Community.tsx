@@ -17,7 +17,7 @@ export default function Community() {
   const postsPerPage = 10;
 
   const { data: posts = [], isLoading } = useQuery<CommunityPostWithUser[]>({
-    queryKey: ["/api/community/posts", { page: currentPage, limit: postsPerPage }],
+    queryKey: [`/api/community/posts?page=${currentPage}&limit=${postsPerPage}`],
   });
 
   const handleNewPost = () => {

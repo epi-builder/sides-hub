@@ -39,7 +39,9 @@ export function CommunityPostModal({ isOpen, onClose }: CommunityPostModalProps)
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/community/posts"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts")
+      });
       toast({
         title: "Success",
         description: "Your post has been created successfully!",
