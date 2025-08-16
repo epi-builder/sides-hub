@@ -44,7 +44,7 @@ const mockProjects = [
   {
     id: "project-1",
     userId: "mock-user-1",
-    title: "TaskFlow - Smart Todo App",
+    title: "TaskFlow - Smart Todo App (Demo)",
     shortDescription: "AI-powered task management app with smart scheduling and productivity insights",
     detailedDescription: "TaskFlow is a next-generation todo application that uses AI to intelligently schedule your tasks based on priority, deadlines, and your productivity patterns. Features include smart notifications, time tracking, and detailed analytics to help you optimize your workflow.",
     thumbnailUrl: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=600&fit=crop",
@@ -57,7 +57,7 @@ const mockProjects = [
   {
     id: "project-2", 
     userId: "mock-user-2",
-    title: "CodeSnap - Screenshot Tool for Developers",
+    title: "CodeSnap - Screenshot Tool for Developers (Demo)",
     shortDescription: "Beautiful code screenshots with syntax highlighting and customizable themes",
     detailedDescription: "CodeSnap makes it easy to create beautiful screenshots of your code with perfect syntax highlighting, customizable themes, and automatic formatting. Perfect for documentation, social media, and presentations. Supports 50+ programming languages.",
     thumbnailUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=600&fit=crop",
@@ -69,7 +69,7 @@ const mockProjects = [
   {
     id: "project-3",
     userId: "mock-user-3", 
-    title: "EcoTracker - Personal Carbon Footprint",
+    title: "EcoTracker - Personal Carbon Footprint (Demo)",
     shortDescription: "Track and reduce your environmental impact with personalized insights",
     detailedDescription: "EcoTracker helps individuals monitor their carbon footprint through daily activities, transportation, and consumption habits. Get personalized recommendations to reduce your environmental impact and connect with a community of eco-conscious users.",
     thumbnailUrl: "https://images.unsplash.com/photo-1569163139394-de44cb2883aa?w=800&h=600&fit=crop",
@@ -82,7 +82,7 @@ const mockProjects = [
   {
     id: "project-4",
     userId: "mock-user-4",
-    title: "MindfulMoments - Meditation App",
+    title: "MindfulMoments - Meditation App (Demo)",
     shortDescription: "Personalized meditation and mindfulness practice with guided sessions",
     detailedDescription: "MindfulMoments offers a curated collection of meditation sessions, breathing exercises, and mindfulness practices. Features include progress tracking, customizable ambient sounds, and daily mindfulness reminders to help build a consistent practice.",
     thumbnailUrl: "https://images.unsplash.com/photo-1545389336-cf090694435e?w=800&h=600&fit=crop",
@@ -94,7 +94,7 @@ const mockProjects = [
   {
     id: "project-5",
     userId: "mock-user-5",
-    title: "DevLink - Developer Network Platform",
+    title: "DevLink - Developer Network Platform (Demo)",
     shortDescription: "Connect with developers, share projects, and find collaboration opportunities",
     detailedDescription: "DevLink is a social platform specifically designed for developers to showcase their work, find collaborators, and build meaningful professional connections. Features include project galleries, skill-based matching, and integrated communication tools.",
     thumbnailUrl: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop",
@@ -107,7 +107,7 @@ const mockProjects = [
   {
     id: "project-6",
     userId: "mock-user-1",
-    title: "SpendSmart - Budget Tracking",
+    title: "SpendSmart - Budget Tracking (Demo)",
     shortDescription: "Simple and intuitive personal finance management with smart categorization",
     detailedDescription: "SpendSmart automatically categorizes your expenses, tracks your spending patterns, and provides insights to help you stay within budget. Connect your bank accounts for automatic transaction import and get personalized savings recommendations.",
     thumbnailUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop",
@@ -119,7 +119,7 @@ const mockProjects = [
   {
     id: "project-7",
     userId: "mock-user-2",
-    title: "RecipeRank - AI Recipe Recommendations",
+    title: "RecipeRank - AI Recipe Recommendations (Demo)",
     shortDescription: "Discover recipes tailored to your taste preferences and dietary needs",
     detailedDescription: "RecipeRank uses machine learning to recommend recipes based on your taste preferences, dietary restrictions, and available ingredients. Rate recipes to improve recommendations and save your favorites for easy access.",
     thumbnailUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop",
@@ -131,7 +131,7 @@ const mockProjects = [
   {
     id: "project-8",
     userId: "mock-user-3",
-    title: "FitQuest - Gamified Fitness Tracking",
+    title: "FitQuest - Gamified Fitness Tracking (Demo)",
     shortDescription: "Turn your fitness journey into an engaging RPG-style adventure",
     detailedDescription: "FitQuest gamifies your fitness routine by turning workouts into quests, achievements into rewards, and progress into character development. Join guilds, compete with friends, and unlock new challenges as you level up your fitness.",
     thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
