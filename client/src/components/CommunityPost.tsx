@@ -23,7 +23,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
   const queryClient = useQueryClient();
 
   // Get like status
-  const { data: likeStatus } = useQuery({
+  const { data: likeStatus = { isLiked: false } } = useQuery<{ isLiked: boolean }>({
     queryKey: ["/api/community/posts", post.id, "like-status"],
     enabled: isAuthenticated,
     retry: false,
@@ -39,7 +39,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts")
+        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts") ?? false
       });
     },
     onError: (error) => {
@@ -67,7 +67,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
       window.location.href = "/api/login";
       return;
     }
-    likeMutation.mutate(likeStatus?.isLiked || false);
+    likeMutation.mutate(likeStatus.isLiked);
   };
 
   const handleShare = () => {
@@ -173,12 +173,12 @@ export function CommunityPost({ post }: CommunityPostProps) {
                 disabled={likeMutation.isPending}
                 className={cn(
                   "flex items-center space-x-1 hover:text-primary transition-colors",
-                  likeStatus?.isLiked && "text-primary"
+                  likeStatus.isLiked && "text-primary"
                 )}
               >
                 <Heart className={cn(
                   "h-4 w-4",
-                  likeStatus?.isLiked && "fill-current"
+                  likeStatus.isLiked && "fill-current"
                 )} />
                 <span>{formatCount(post.likeCount || 0)}</span>
               </button>

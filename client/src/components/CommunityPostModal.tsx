@@ -40,7 +40,7 @@ export function CommunityPostModal({ isOpen, onClose }: CommunityPostModalProps)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts")
+        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts") ?? false
       });
       toast({
         title: "Success",
