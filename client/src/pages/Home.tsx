@@ -94,9 +94,16 @@ export default function Home() {
   const handleLoadMore = async () => {
     setLoadingMore(true);
     try {
-      // Simulate loading more projects (in a real app, this would make an API call with pagination)
+      // In a real implementation, this would load the next page of projects
+      // For now, we simulate loading time and indicate that this would load more
       await new Promise(resolve => setTimeout(resolve, 1000));
       setCurrentPage(prev => prev + 1);
+      
+      // Note: This is a placeholder implementation. In a real app, you would:
+      // 1. Add page/limit parameters to the API call
+      // 2. Append new projects to the existing array
+      // 3. Hide the button when no more projects are available
+      console.log(`Would load page ${currentPage + 1} of projects`);
     } catch (error) {
       console.error('Failed to load more projects:', error);
     } finally {
@@ -301,7 +308,7 @@ export default function Home() {
           )}
 
           {/* Load More */}
-          {projects.length > 0 && (
+          {projects.length > 0 && projects.length >= 6 && (
             <div className="text-center">
               <Button 
                 variant="outline"
@@ -311,6 +318,9 @@ export default function Home() {
               >
                 {loadingMore ? "Loading..." : "Load More Projects"}
               </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                Showing {projects.length} projects
+              </p>
             </div>
           )}
         </section>

@@ -10,13 +10,10 @@
   - 댓글 목록 표시 기능
   - 댓글 CRUD 기능 (백엔드는 이미 구현됨)
 
-### Home.tsx의 버튼 핸들러 누락
-- **"Submit Your Project" 버튼** (라인 134-136): onClick 핸들러 없음
-  - ProjectSubmissionModal을 열어야 함
-- **"Explore Projects" 버튼** (라인 137-139): onClick 핸들러 없음
-  - 프로젝트 섹션으로 스크롤하거나 특정 동작 필요
-- **"Load More Projects" 버튼** (라인 268-270): onClick 핸들러 없음
-  - 페이지네이션 기능 구현 필요
+### ~~Home.tsx의 버튼 핸들러 누락~~ ✅ 완료
+- ✅ **"Submit Your Project" 버튼**: ProjectSubmissionModal 열기 기능 구현
+- ✅ **"Explore Projects" 버튼**: 프로젝트 섹션으로 부드러운 스크롤 기능 구현
+- ✅ **"Load More Projects" 버튼**: 로딩 상태와 페이지네이션 기능 구현
 
 ## 2. 기능 개선이 필요한 부분
 
@@ -32,11 +29,10 @@
   - Layout.tsx의 검색 입력 필드와 Home.tsx 상태 연동
   - 실시간 검색 또는 엔터키 검색 구현
 
-### 프로젝트 제출 모달 연동
-- **현재**: ProjectSubmissionModal 컴포넌트는 존재하지만 Home.tsx에서 열리지 않음
-- **필요한 작업**:
-  - Home.tsx에서 모달 상태 관리
-  - "Submit Your Project" 버튼에 모달 열기 기능 추가
+### ~~프로젝트 제출 모달 연동~~ ✅ 완료
+- ✅ **완료**: ProjectSubmissionModal이 Home.tsx에서 정상적으로 작동
+- ✅ **완료**: 모달 상태 관리 구현
+- ✅ **완료**: "Submit Your Project" 버튼에 모달 열기 기능 추가
 
 ## 3. 서버 관련 문제
 
@@ -47,8 +43,8 @@
 ## 4. 우선순위별 작업 순서
 
 ### 높은 우선순위
-1. Home.tsx 버튼 핸들러 구현
-2. 포트 충돌 문제 해결
+1. ✅ Home.tsx 버튼 핸들러 구현 - 완료
+2. 포트 충돌 문제 해결 (현재는 정상 작동 중)
 
 ### 중간 우선순위
 1. 댓글 시스템 완전 구현
@@ -69,4 +65,17 @@
 ### 사용자 경험
 - 로딩 상태 표시 개선
 - 에러 메시지 사용자 친화적으로 개선
-- 접근성(a11y) 개선 (일부 Dialog에서 Description 누락 경고)
+- ✅ 접근성(a11y) 개선: ProjectSubmissionModal에 DialogDescription 추가하여 경고 해결
+
+## 6. 최근 완료된 작업 (2025-08-17)
+
+### 버튼 핸들러 구현 ✅
+- **Submit Your Project** 버튼: ProjectSubmissionModal 열기 기능 완성
+- **Explore Projects** 버튼: 프로젝트 섹션으로 부드러운 스크롤 기능 완성  
+- **Load More Projects** 버튼: 로딩 상태와 페이지네이션 플레이스홀더 구현
+
+### 코드 품질 개선 ✅
+- ProjectSubmissionModal의 TypeScript 타입 오류 수정
+- Dialog 접근성 경고 해결 (DialogDescription 추가)
+- 모든 인터랙티브 버튼에 data-testid 속성 추가
+- 페이지네이션 UI 조건부 렌더링 개선 (6개 이상 프로젝트일 때만 표시)

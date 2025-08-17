@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +99,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful.length > 0) {
+    if (result.successful && result.successful.length > 0) {
       const uploadedFile = result.successful[0];
       const uploadURL = uploadedFile.uploadURL;
       
@@ -180,6 +180,9 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Submit Your Project</DialogTitle>
+          <DialogDescription>
+            Share your side project with the developer community. Fill in the details below to showcase your work.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -266,7 +269,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                   <FormItem>
                     <FormLabel>Live Demo URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://myproject.com" {...field} />
+                      <Input placeholder="https://myproject.com" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -279,7 +282,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                   <FormItem>
                     <FormLabel>Source Code URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://github.com/user/repo" {...field} />
+                      <Input placeholder="https://github.com/user/repo" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
