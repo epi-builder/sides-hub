@@ -33,7 +33,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Project operations
-  getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string }): Promise<ProjectWithUser[]>;
+  getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string; page?: number; limit?: number }): Promise<{ projects: ProjectWithUser[]; total: number }>;
   getFeaturedProjects(): Promise<ProjectWithUser[]>;
   getTrendingProjects(): Promise<ProjectWithUser[]>;
   getProject(id: string): Promise<ProjectWithUser | undefined>;
@@ -100,7 +100,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string }): Promise<ProjectWithUser[]> {
+  async getProjects(filters?: { search?: string; tags?: string[]; techStack?: string[]; sortBy?: string; page?: number; limit?: number }): Promise<{ projects: ProjectWithUser[]; total: number }> {
     let baseQuery = db
       .select({
         id: projects.id,
@@ -155,20 +155,41 @@ export class DatabaseStorage implements IStorage {
       baseQuery = baseQuery.where(and(...conditions)) as any;
     }
 
+    // Get total count before applying pagination
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(projects);
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions)) as any;
+    }
+    const totalResult = await countQuery;
+    const total = totalResult[0]?.count || 0;
+
     // Apply sorting
-    let results;
+    let query = baseQuery;
     switch (filters?.sortBy) {
       case 'likes':
-        results = await baseQuery.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`));
+        query = query.orderBy(desc(sql`COALESCE(${count(projectLikes.id)}, 0)`)) as any;
         break;
       case 'oldest':
-        results = await baseQuery.orderBy(asc(projects.createdAt));
+        query = query.orderBy(asc(projects.createdAt)) as any;
         break;
       default:
-        results = await baseQuery.orderBy(desc(projects.createdAt));
+        query = query.orderBy(desc(projects.createdAt)) as any;
     }
 
-    return results.filter(result => result.user !== null) as ProjectWithUser[];
+    // Apply pagination
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 6;
+    const offset = (page - 1) * limit;
+    
+    query = query.limit(limit).offset(offset) as any;
+    
+    const results = await query;
+    const filteredResults = results.filter(result => result.user !== null) as ProjectWithUser[];
+
+    return {
+      projects: filteredResults,
+      total: Math.max(0, total)
+    };
   }
 
   async getFeaturedProjects(): Promise<ProjectWithUser[]> {

@@ -35,15 +35,17 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
   // Project routes
   app.get('/api/projects', async (req, res) => {
     try {
-      const { search, tags, techStack, sortBy } = req.query;
+      const { search, tags, techStack, sortBy, page, limit } = req.query;
       const filters = {
         search: search as string,
         tags: tags ? (tags as string).split(',') : undefined,
         techStack: techStack ? (techStack as string).split(',') : undefined,
         sortBy: sortBy as string,
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 6,
       };
-      const projects = await storage.getProjects(filters);
-      res.json(projects);
+      const result = await storage.getProjects(filters);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });

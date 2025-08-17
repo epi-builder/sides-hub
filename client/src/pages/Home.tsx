@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -19,6 +19,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [allProjects, setAllProjects] = useState<ProjectWithUser[]>([]);
 
   // Get URL search params
   const urlParams = new URLSearchParams(window.location.search);
@@ -44,13 +45,34 @@ export default function Home() {
   if (sortBy !== "recent") {
     queryParams.set('sortBy', sortBy);
   }
+  queryParams.set('page', '1');
+  queryParams.set('limit', '6');
   
   const queryString = queryParams.toString();
-  const apiUrl = queryString ? `/api/projects?${queryString}` : '/api/projects';
+  const apiUrl = `/api/projects?${queryString}`;
 
-  const { data: projects = [], isLoading } = useQuery<ProjectWithUser[]>({
+  const { data: projectsData, isLoading } = useQuery<{ projects: ProjectWithUser[]; total: number }>({
     queryKey: [apiUrl],
+    queryFn: async () => {
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      return response.json();
+    },
   });
+
+  const initialProjects = projectsData?.projects || [];
+  const totalProjects = projectsData?.total || 0;
+  
+  // Combine initial projects with loaded more projects
+  const projects = currentPage === 1 ? initialProjects : [...initialProjects, ...allProjects];
+
+  // Reset additional projects when filters change
+  useEffect(() => {
+    setAllProjects([]);
+    setCurrentPage(1);
+  }, [searchQuery, urlSearch, selectedCategory, selectedTechStack, sortBy]);
 
   const { data: analytics } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
@@ -73,6 +95,7 @@ export default function Home() {
     setSelectedTechStack("all");
     setSortBy("recent");
     setCurrentPage(1);
+    setAllProjects([]);
     // Clear URL search params
     window.history.replaceState({}, '', window.location.pathname);
   };
@@ -94,16 +117,31 @@ export default function Home() {
   const handleLoadMore = async () => {
     setLoadingMore(true);
     try {
-      // In a real implementation, this would load the next page of projects
-      // For now, we simulate loading time and indicate that this would load more
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCurrentPage(prev => prev + 1);
+      const nextPage = currentPage + 1;
+      const loadMoreParams = new URLSearchParams();
       
-      // Note: This is a placeholder implementation. In a real app, you would:
-      // 1. Add page/limit parameters to the API call
-      // 2. Append new projects to the existing array
-      // 3. Hide the button when no more projects are available
-      console.log(`Would load page ${currentPage + 1} of projects`);
+      if (searchQuery || urlSearch) {
+        loadMoreParams.set('search', searchQuery || urlSearch || '');
+      }
+      if (selectedCategory !== "all") {
+        loadMoreParams.set('tags', selectedCategory);
+      }
+      if (selectedTechStack !== "all") {
+        loadMoreParams.set('techStack', selectedTechStack);
+      }
+      if (sortBy !== "recent") {
+        loadMoreParams.set('sortBy', sortBy);
+      }
+      loadMoreParams.set('page', nextPage.toString());
+      loadMoreParams.set('limit', '6');
+      
+      const response = await fetch(`/api/projects?${loadMoreParams.toString()}`);
+      const data = await response.json();
+      
+      if (data.projects && data.projects.length > 0) {
+        setAllProjects(prev => [...prev, ...data.projects]);
+        setCurrentPage(nextPage);
+      }
     } catch (error) {
       console.error('Failed to load more projects:', error);
     } finally {
@@ -308,7 +346,7 @@ export default function Home() {
           )}
 
           {/* Load More */}
-          {projects.length > 0 && projects.length >= 6 && (
+          {projects.length > 0 && projects.length < totalProjects && (
             <div className="text-center">
               <Button 
                 variant="outline"
@@ -319,7 +357,7 @@ export default function Home() {
                 {loadingMore ? "Loading..." : "Load More Projects"}
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
-                Showing {projects.length} projects
+                Showing {projects.length} of {totalProjects} projects
               </p>
             </div>
           )}
