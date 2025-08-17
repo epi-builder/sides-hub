@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { ProjectCard } from "@/components/ProjectCard";
+import { ProjectSubmissionModal } from "@/components/ProjectSubmissionModal";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTechStack, setSelectedTechStack] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Get URL search params
   const urlParams = new URLSearchParams(window.location.search);
@@ -68,11 +72,37 @@ export default function Home() {
     setSelectedCategory("all");
     setSelectedTechStack("all");
     setSortBy("recent");
+    setCurrentPage(1);
     // Clear URL search params
     window.history.replaceState({}, '', window.location.pathname);
   };
 
   const hasFilters = searchQuery || urlSearch || selectedCategory !== "all" || selectedTechStack !== "all" || sortBy !== "recent";
+
+  // Handler functions for buttons
+  const handleSubmitProject = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleExploreProjects = () => {
+    const projectsSection = document.getElementById('projects-section');
+    if (projectsSection) {
+      projectsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      // Simulate loading more projects (in a real app, this would make an API call with pagination)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentPage(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to load more projects:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -131,10 +161,18 @@ export default function Home() {
               Join a community of developers sharing their passion projects. Discover amazing side projects, get feedback, and inspire others.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button 
+                className="bg-primary hover:bg-primary/90"
+                onClick={handleSubmitProject}
+                data-testid="button-submit-project"
+              >
                 Submit Your Project
               </Button>
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={handleExploreProjects}
+                data-testid="button-explore-projects"
+              >
                 Explore Projects
               </Button>
             </div>
@@ -142,7 +180,7 @@ export default function Home() {
         </section>
 
         {/* Stats and Filters */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <section id="projects-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
             {/* Stats */}
             <div className="flex items-center space-x-8">
@@ -265,8 +303,13 @@ export default function Home() {
           {/* Load More */}
           {projects.length > 0 && (
             <div className="text-center">
-              <Button variant="outline">
-                Load More Projects
+              <Button 
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                data-testid="button-load-more"
+              >
+                {loadingMore ? "Loading..." : "Load More Projects"}
               </Button>
             </div>
           )}
@@ -340,6 +383,12 @@ export default function Home() {
           </section>
         )}
       </div>
+      
+      {/* Project Submission Modal */}
+      <ProjectSubmissionModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </Layout>
   );
 }
