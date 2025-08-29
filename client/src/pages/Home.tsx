@@ -237,13 +237,13 @@ export default function Home() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-secondary">
-                  {analytics?.totalUsers || 856}
+                  {analytics?.totalUsers || 0}
                 </div>
                 <div className="text-sm text-muted-foreground">Developers</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-accent">
-                  {analytics?.totalLikes || 3429}
+                  {analytics?.totalLikes || 0}
                 </div>
                 <div className="text-sm text-muted-foreground">Likes</div>
               </div>
