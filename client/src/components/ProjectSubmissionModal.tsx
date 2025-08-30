@@ -396,7 +396,12 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                 type="submit" 
                 disabled={createProjectMutation.isPending}
                 className="bg-primary hover:bg-primary/90"
-                onClick={() => console.log("Submit button clicked!")}
+                onClick={() => {
+                  console.log("Submit button clicked!");
+                  console.log("Form is valid:", form.formState.isValid);
+                  console.log("Form errors:", form.formState.errors);
+                  console.log("Form values:", form.getValues());
+                }}
                 data-testid="button-submit-project"
               >
                 {createProjectMutation.isPending ? "Submitting..." : "Submit Project"}
