@@ -74,8 +74,29 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
   app.post('/api/projects', authMiddleware, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const projectData = insertProjectSchema.parse({ ...req.body, userId });
-      const project = await storage.createProject(projectData);
+      let projectData = { ...req.body, userId };
+      
+      // Handle thumbnail URL ACL if it's a cloud storage URL
+      if (projectData.thumbnail && projectData.thumbnail.startsWith("https://storage.googleapis.com/")) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          const normalizedThumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
+            projectData.thumbnail,
+            {
+              owner: userId,
+              visibility: "public",
+            }
+          );
+          projectData.thumbnail = normalizedThumbnailPath;
+          console.log(`Thumbnail ACL set for project. Original: ${req.body.thumbnail}, Normalized: ${normalizedThumbnailPath}`);
+        } catch (error) {
+          console.error("Error setting thumbnail ACL during project creation:", error);
+          // Continue with original thumbnail URL if ACL setting fails
+        }
+      }
+      
+      const parsedProjectData = insertProjectSchema.parse(projectData);
+      const project = await storage.createProject(parsedProjectData);
       res.json(project);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -377,39 +398,6 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
-  app.put("/api/projects/thumbnail", authMiddleware, async (req: any, res) => {
-    if (!req.body.thumbnailUrl) {
-      return res.status(400).json({ error: "thumbnailUrl is required" });
-    }
-
-    const userId = req.user?.claims?.sub;
-    console.log(`Processing thumbnail upload for user ${userId}, URL: ${req.body.thumbnailUrl}`);
-
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        req.body.thumbnailUrl,
-        {
-          owner: userId,
-          visibility: "public",
-        },
-      );
-
-      console.log(`Thumbnail processing successful. Original: ${req.body.thumbnailUrl}, Normalized: ${objectPath}`);
-      res.status(200).json({
-        objectPath: objectPath,
-      });
-    } catch (error) {
-      console.error("Error setting thumbnail ACL:", error);
-      console.error("Error details:", error instanceof Error ? error.message : String(error), error instanceof Error ? error.stack : "");
-      
-      // Return error to client instead of silently returning original URL
-      res.status(500).json({
-        error: "Failed to process thumbnail upload",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

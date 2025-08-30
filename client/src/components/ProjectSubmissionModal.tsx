@@ -118,37 +118,15 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       const uploadedFile = result.successful[0];
       const uploadURL = uploadedFile.uploadURL;
       
-      console.log("Upload completed, processing with URL:", uploadURL);
+      console.log("Upload completed, URL:", uploadURL);
       
-      try {
-        // Set ACL policy for the uploaded thumbnail
-        const response = await apiRequest("PUT", "/api/projects/thumbnail", {
-          thumbnailUrl: uploadURL,
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setThumbnailUrl(data.objectPath);
-        
-        console.log("Thumbnail processing successful, objectPath:", data.objectPath);
-        
-        toast({
-          title: "Success",
-          description: "Thumbnail uploaded successfully!",
-        });
-      } catch (error) {
-        console.error("Error setting thumbnail ACL:", error);
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        toast({
-          title: "Error",
-          description: `Failed to process thumbnail upload: ${errorMessage}`,
-          variant: "destructive",
-        });
-      }
+      // Simply store the upload URL - ACL will be set when project is created
+      setThumbnailUrl(uploadURL || "");
+      
+      toast({
+        title: "Success",
+        description: "Thumbnail uploaded successfully!",
+      });
     }
   };
 
