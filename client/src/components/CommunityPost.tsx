@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Heart, MessageCircle, Share, Pin, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CommunityPostWithUser } from "@shared/schema";
+import type { CommunityPostWithUser, User } from "@shared/schema";
 
 interface CommunityPostProps {
   post: CommunityPostWithUser;
@@ -165,7 +165,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
   };
 
   // Check if current user is the author of the post
-  const isOwner = isAuthenticated && user && (user as any).id === post.userId;
+  const isOwner = isAuthenticated && user && (user as User).id === post.userId;
 
   return (
     <Card className={cn(
@@ -237,6 +237,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
                   "flex items-center space-x-1 hover:text-primary transition-colors",
                   likeStatus.isLiked && "text-primary"
                 )}
+                data-testid={`button-like-post-${post.id}`}
               >
                 <Heart className={cn(
                   "h-4 w-4",
@@ -255,6 +256,7 @@ export function CommunityPost({ post }: CommunityPostProps) {
               <button
                 onClick={handleShare}
                 className="flex items-center space-x-1 hover:text-primary transition-colors"
+                data-testid={`button-share-post-${post.id}`}
               >
                 <Share className="h-4 w-4" />
                 <span>Share</span>

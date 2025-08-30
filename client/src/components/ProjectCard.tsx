@@ -218,16 +218,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
               )} />
             </Button>
             {isOwner ? (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
                 data-testid={`button-delete-${project.id}`}
+                title="Delete project"
               >
                 <Trash2 className="h-4 w-4" />
-              </Button>
+              </button>
             ) : null}
           </div>
         </div>
