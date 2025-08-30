@@ -118,13 +118,23 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       const uploadedFile = result.successful[0];
       const uploadURL = uploadedFile.uploadURL;
       
+      console.log("Upload completed, processing with URL:", uploadURL);
+      
       try {
         // Set ACL policy for the uploaded thumbnail
         const response = await apiRequest("PUT", "/api/projects/thumbnail", {
           thumbnailUrl: uploadURL,
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
         setThumbnailUrl(data.objectPath);
+        
+        console.log("Thumbnail processing successful, objectPath:", data.objectPath);
         
         toast({
           title: "Success",
@@ -132,9 +142,10 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
         });
       } catch (error) {
         console.error("Error setting thumbnail ACL:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         toast({
           title: "Error",
-          description: "Failed to process thumbnail upload",
+          description: `Failed to process thumbnail upload: ${errorMessage}`,
           variant: "destructive",
         });
       }

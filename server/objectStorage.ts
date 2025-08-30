@@ -184,16 +184,23 @@ export class ObjectStorageService {
     const url = new URL(rawPath);
     const rawObjectPath = url.pathname;
   
+    // Get the private object directory and format it properly
     let objectEntityDir = this.getPrivateObjectDir();
+    
+    // The objectEntityDir format is like: /bucket-name/.private
+    // The rawObjectPath format is like: /bucket-name/.private/uploads/uuid
+    if (!objectEntityDir.startsWith("/")) {
+      objectEntityDir = `/${objectEntityDir}`;
+    }
     if (!objectEntityDir.endsWith("/")) {
       objectEntityDir = `${objectEntityDir}/`;
     }
   
     if (!rawObjectPath.startsWith(objectEntityDir)) {
-      return rawObjectPath;
+      return rawPath; // Return original path if it doesn't match our pattern
     }
   
-    // Extract the entity ID from the path
+    // Extract the entity ID from the path (everything after the private dir)
     const entityId = rawObjectPath.slice(objectEntityDir.length);
     return `/objects/${entityId}`;
   }

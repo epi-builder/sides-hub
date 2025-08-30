@@ -383,6 +383,7 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
 
     const userId = req.user?.claims?.sub;
+    console.log(`Processing thumbnail upload for user ${userId}, URL: ${req.body.thumbnailUrl}`);
 
     try {
       const objectStorageService = new ObjectStorageService();
@@ -394,14 +395,18 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
         },
       );
 
+      console.log(`Thumbnail processing successful. Original: ${req.body.thumbnailUrl}, Normalized: ${objectPath}`);
       res.status(200).json({
         objectPath: objectPath,
       });
     } catch (error) {
-      console.error("Error setting thumbnail (object storage not available):", error);
-      // If object storage is not available, just return the original URL
-      res.status(200).json({
-        objectPath: req.body.thumbnailUrl,
+      console.error("Error setting thumbnail ACL:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error), error instanceof Error ? error.stack : "");
+      
+      // Return error to client instead of silently returning original URL
+      res.status(500).json({
+        error: "Failed to process thumbnail upload",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
