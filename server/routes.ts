@@ -296,6 +296,22 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
+  app.delete('/api/community/posts/:id', authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const success = await storage.deleteCommunityPost(req.params.id, userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ message: "Failed to delete post" });
+    }
+  });
+
   // Comment routes
   app.get('/api/projects/:id/comments', async (req, res) => {
     try {

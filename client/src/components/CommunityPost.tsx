@@ -9,7 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Heart, MessageCircle, Share, Pin } from "lucide-react";
+import { Heart, MessageCircle, Share, Pin, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CommunityPostWithUser } from "@shared/schema";
 
@@ -18,7 +18,7 @@ interface CommunityPostProps {
 }
 
 export function CommunityPost({ post }: CommunityPostProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -62,6 +62,39 @@ export function CommunityPost({ post }: CommunityPostProps) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/community/posts/${post.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0]?.toString().startsWith("/api/community/posts") ?? false
+      });
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLike = () => {
     if (!isAuthenticated) {
       window.location.href = "/api/login";
@@ -84,6 +117,17 @@ export function CommunityPost({ post }: CommunityPostProps) {
         title: "Link copied",
         description: "Post link has been copied to clipboard",
       });
+    }
+  };
+
+  const handleDelete = () => {
+    if (!isAuthenticated) {
+      window.location.href = "/api/login";
+      return;
+    }
+    
+    if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+      deleteMutation.mutate();
     }
   };
 
@@ -120,6 +164,9 @@ export function CommunityPost({ post }: CommunityPostProps) {
     return "U";
   };
 
+  // Check if current user is the author of the post
+  const isOwner = isAuthenticated && user && (user as any).id === post.userId;
+
   return (
     <Card className={cn(
       "border-border",
@@ -140,20 +187,35 @@ export function CommunityPost({ post }: CommunityPostProps) {
 
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center space-x-2 mb-2">
-              {post.isPinned && (
-                <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700">
-                  PINNED
-                </Badge>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                {post.isPinned && (
+                  <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700">
+                    PINNED
+                  </Badge>
+                )}
+                <span className="font-medium">
+                  {post.user?.firstName && post.user?.lastName 
+                    ? `${post.user.firstName} ${post.user.lastName}`
+                    : post.user?.email?.split('@')[0] || "Anonymous"}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  • {formatDate(post.createdAt!)}
+                </span>
+              </div>
+              
+              {/* Delete button for post owner */}
+              {isOwner && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  data-testid={`button-delete-post-${post.id}`}
+                  title="Delete post"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               )}
-              <span className="font-medium">
-                {post.user?.firstName && post.user?.lastName 
-                  ? `${post.user.firstName} ${post.user.lastName}`
-                  : post.user?.email?.split('@')[0] || "Anonymous"}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                • {formatDate(post.createdAt!)}
-              </span>
             </div>
 
             {/* Content */}
