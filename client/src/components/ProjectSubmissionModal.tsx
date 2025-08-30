@@ -17,7 +17,9 @@ import { insertProjectSchema } from "@shared/schema";
 import { X } from "lucide-react";
 import { z } from "zod";
 
-const formSchema = insertProjectSchema.extend({
+const formSchema = insertProjectSchema.omit({
+  userId: true,
+}).extend({
   tags: z.array(z.string()).optional(),
   techStack: z.array(z.string()).optional(),
 });
