@@ -396,11 +396,21 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                 type="submit" 
                 disabled={createProjectMutation.isPending}
                 className="bg-primary hover:bg-primary/90"
-                onClick={() => {
+                onClick={async () => {
                   console.log("Submit button clicked!");
-                  console.log("Form is valid:", form.formState.isValid);
+                  // Force validation and show errors
+                  const isValid = await form.trigger();
+                  console.log("Form is valid:", isValid);
                   console.log("Form errors:", form.formState.errors);
                   console.log("Form values:", form.getValues());
+                  
+                  if (!isValid) {
+                    // Mark all fields as touched to show validation errors
+                    const formValues = form.getValues();
+                    Object.keys(formValues).forEach(key => {
+                      form.trigger(key as any);
+                    });
+                  }
                 }}
                 data-testid="button-submit-project"
               >
