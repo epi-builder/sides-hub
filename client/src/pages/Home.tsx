@@ -52,7 +52,7 @@ export default function Home() {
   const apiUrl = `/api/projects?${queryString}`;
 
   const { data: projectsData, isLoading } = useQuery<{ projects: ProjectWithUser[]; total: number }>({
-    queryKey: [apiUrl],
+    queryKey: ["/api/projects", searchQuery || urlSearch || "", selectedCategory, selectedTechStack, sortBy, 1, 6],
     queryFn: async () => {
       const response = await fetch(apiUrl);
       if (!response.ok) {
