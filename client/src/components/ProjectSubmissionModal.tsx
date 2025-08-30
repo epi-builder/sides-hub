@@ -32,6 +32,8 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+  const [thumbnailInputMethod, setThumbnailInputMethod] = useState<"upload" | "url">("upload");
+  const [thumbnailUrlInput, setThumbnailUrlInput] = useState<string>("");
   const [tagInput, setTagInput] = useState("");
   const [techStackInput, setTechStackInput] = useState("");
 
@@ -65,6 +67,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       });
       form.reset();
       setThumbnailUrl("");
+      setThumbnailUrlInput("");
       setTagInput("");
       setTechStackInput("");
       onClose();
@@ -165,6 +168,16 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       });
       return;
     }
+    
+    if (!thumbnailUrl) {
+      toast({
+        title: "Error",
+        description: "썸네일 이미지를 업로드하거나 URL을 입력해주세요",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createProjectMutation.mutate(data);
   };
 
@@ -237,26 +250,89 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
             />
 
             {/* Thumbnail Upload */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Thumbnail Image *</Label>
-              <ObjectUploader
-                maxNumberOfFiles={1}
-                maxFileSize={5242880} // 5MB
-                onGetUploadParameters={handleGetUploadParameters}
-                onComplete={handleUploadComplete}
-                buttonClassName="w-full border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors bg-transparent"
-              >
-                <div className="flex flex-col items-center space-y-2">
-                  <Plus className="h-8 w-8 text-muted-foreground" />
-                  <div>
-                    <p className="text-muted-foreground">Click to upload or drag and drop</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
-                    {thumbnailUrl && (
-                      <p className="text-xs text-primary mt-1">✓ Thumbnail uploaded</p>
-                    )}
+              
+              {/* Method Selection */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={thumbnailInputMethod === "upload" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setThumbnailInputMethod("upload");
+                    setThumbnailUrlInput("");
+                  }}
+                  data-testid="button-upload-method"
+                >
+                  파일 업로드
+                </Button>
+                <Button
+                  type="button"
+                  variant={thumbnailInputMethod === "url" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setThumbnailInputMethod("url");
+                    setThumbnailUrl("");
+                  }}
+                  data-testid="button-url-method"
+                >
+                  URL 입력
+                </Button>
+              </div>
+
+              {/* File Upload Method */}
+              {thumbnailInputMethod === "upload" && (
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={5242880} // 5MB
+                  onGetUploadParameters={handleGetUploadParameters}
+                  onComplete={handleUploadComplete}
+                  buttonClassName="w-full border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors bg-transparent"
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <Plus className="h-8 w-8 text-muted-foreground" />
+                    <div>
+                      <p className="text-muted-foreground">클릭하여 업로드하거나 드래그 앤 드롭</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG 최대 5MB</p>
+                      {thumbnailUrl && (
+                        <p className="text-xs text-primary mt-1">✓ 썸네일 업로드 완료</p>
+                      )}
+                    </div>
                   </div>
+                </ObjectUploader>
+              )}
+
+              {/* URL Input Method */}
+              {thumbnailInputMethod === "url" && (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="이미지 URL을 입력하세요 (예: https://example.com/image.jpg)"
+                    value={thumbnailUrlInput}
+                    onChange={(e) => {
+                      setThumbnailUrlInput(e.target.value);
+                      setThumbnailUrl(e.target.value);
+                    }}
+                    data-testid="input-thumbnail-url"
+                  />
+                  {thumbnailUrlInput && (
+                    <div className="border rounded-lg p-2 bg-muted/20">
+                      <p className="text-xs text-muted-foreground mb-2">미리보기:</p>
+                      <img
+                        src={thumbnailUrlInput}
+                        alt="Thumbnail preview"
+                        className="w-20 h-20 object-cover rounded border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                        onLoad={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'block';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-              </ObjectUploader>
+              )}
             </div>
 
             {/* Links */}
