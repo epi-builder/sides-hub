@@ -347,7 +347,6 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       // Silently fail if view tracking fails (e.g., duplicate views)
-      console.log("View tracking failed:", error);
     }
   }
 

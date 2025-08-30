@@ -88,7 +88,6 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
             }
           );
           projectData.thumbnail = normalizedThumbnailPath;
-          console.log(`Thumbnail ACL set for project. Original: ${req.body.thumbnail}, Normalized: ${normalizedThumbnailPath}`);
         } catch (error) {
           console.error("Error setting thumbnail ACL during project creation:", error);
           // Continue with original thumbnail URL if ACL setting fails

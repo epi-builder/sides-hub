@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Calendar, Heart, Eye, MessageSquare, Code, Bookmark, User as UserIcon, Mail } from "lucide-react";
+import { Calendar, Heart, Eye, MessageSquare, Code, Bookmark, Mail } from "lucide-react";
 import type { ProjectWithUser, User } from "@shared/schema";
 
 export default function Profile() {

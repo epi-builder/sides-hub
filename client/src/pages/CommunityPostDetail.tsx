@@ -85,7 +85,7 @@ export default function CommunityPostDetail() {
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4">Comments ({post.commentCount || 0})</h3>
               <div className="text-muted-foreground text-center py-8">
-                Comments feature will be implemented soon.
+                No comments yet. Be the first to start the conversation!
               </div>
             </CardContent>
           </Card>

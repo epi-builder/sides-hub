@@ -123,12 +123,6 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   };
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log("Form submission triggered!");
-    console.log("Is authenticated:", isAuthenticated);
-    console.log("Form data:", data);
-    console.log("Thumbnail URL:", thumbnailUrl);
-    console.log("Form errors:", form.formState.errors);
-    
     if (!isAuthenticated) {
       toast({
         title: "Login Required",
@@ -156,7 +150,6 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       return;
     }
     
-    console.log("About to submit project...");
     createProjectMutation.mutate(data);
   };
 
@@ -398,13 +391,9 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
                 type="submit" 
                 disabled={createProjectMutation.isPending}
                 className="bg-primary hover:bg-primary/90"
-                onClick={async () => {
-                  console.log("Submit button clicked!");
+onClick={async () => {
                   // Force validation and show errors
                   const isValid = await form.trigger();
-                  console.log("Form is valid:", isValid);
-                  console.log("Form errors:", form.formState.errors);
-                  console.log("Form values:", form.getValues());
                   
                   if (!isValid) {
                     // Mark all fields as touched to show validation errors
