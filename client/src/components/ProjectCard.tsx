@@ -9,16 +9,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Heart, Eye, MessageCircle, Bookmark, ExternalLink, Github } from "lucide-react";
+import { Heart, Eye, MessageCircle, Bookmark, ExternalLink, Github, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ProjectWithUser, LikeStatus } from "@shared/schema";
+import type { ProjectWithUser, LikeStatus, User } from "@shared/schema";
 
 interface ProjectCardProps {
   project: ProjectWithUser;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -92,6 +92,38 @@ export function ProjectCard({ project }: ProjectCardProps) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/projects/${project.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLike = () => {
     if (!isAuthenticated) {
       window.location.href = "/api/login";
@@ -107,6 +139,20 @@ export function ProjectCard({ project }: ProjectCardProps) {
     }
     bookmarkMutation.mutate(likeStatus?.isBookmarked || false);
   };
+
+  const handleDelete = () => {
+    if (!isAuthenticated) {
+      window.location.href = "/api/login";
+      return;
+    }
+    
+    if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      deleteMutation.mutate();
+    }
+  };
+
+  // Check if current user is the project owner
+  const isOwner = isAuthenticated && user && (user as User).id === project.userId;
 
   const formatDate = (date: string | Date) => {
     const now = new Date();
@@ -154,21 +200,36 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {project.title}
             </h3>
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBookmark}
-            disabled={bookmarkMutation.isPending}
-            className={cn(
-              "h-8 w-8 p-0",
-              likeStatus?.isBookmarked && "text-primary"
-            )}
-          >
-            <Bookmark className={cn(
-              "h-4 w-4",
-              likeStatus?.isBookmarked && "fill-current"
-            )} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBookmark}
+              disabled={bookmarkMutation.isPending}
+              className={cn(
+                "h-8 w-8 p-0",
+                likeStatus?.isBookmarked && "text-primary"
+              )}
+              data-testid={`button-bookmark-${project.id}`}
+            >
+              <Bookmark className={cn(
+                "h-4 w-4",
+                likeStatus?.isBookmarked && "fill-current"
+              )} />
+            </Button>
+            {isOwner ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                data-testid={`button-delete-${project.id}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {/* Description */}

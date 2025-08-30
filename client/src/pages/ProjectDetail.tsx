@@ -12,9 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Heart, Eye, MessageCircle, Bookmark, ExternalLink, Github, Calendar, User } from "lucide-react";
+import { Heart, Eye, MessageCircle, Bookmark, ExternalLink, Github, Calendar, User, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ProjectWithUser, CommentWithUser } from "@shared/schema";
+import type { ProjectWithUser, CommentWithUser, User as UserType, LikeStatus } from "@shared/schema";
 
 export default function ProjectDetail() {
   const [, params] = useRoute("/projects/:id");
@@ -22,6 +22,11 @@ export default function ProjectDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
+
+  // Navigate back to home after deletion
+  const navigate = (path: string) => {
+    window.location.href = path;
+  };
 
   const projectId = params?.id;
 
@@ -35,7 +40,7 @@ export default function ProjectDetail() {
     enabled: !!projectId,
   });
 
-  const { data: likeStatus } = useQuery({
+  const { data: likeStatus } = useQuery<LikeStatus>({
     queryKey: ["/api/projects", projectId, "like-status"],
     enabled: isAuthenticated && !!projectId,
     retry: false,
@@ -141,6 +146,37 @@ export default function ProjectDetail() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/projects/${projectId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+      navigate("/");
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLike = () => {
     if (!isAuthenticated) {
       window.location.href = "/api/login";
@@ -165,6 +201,20 @@ export default function ProjectDetail() {
     if (!commentText.trim()) return;
     commentMutation.mutate(commentText.trim());
   };
+
+  const handleDelete = () => {
+    if (!isAuthenticated) {
+      window.location.href = "/api/login";
+      return;
+    }
+    
+    if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      deleteMutation.mutate();
+    }
+  };
+
+  // Check if current user is the project owner
+  const isOwner = isAuthenticated && user && (user as UserType).id === project?.userId;
 
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -248,6 +298,7 @@ export default function ProjectDetail() {
                   className={cn(
                     likeStatus?.isLiked && "text-primary border-primary"
                   )}
+                  data-testid="button-like-project"
                 >
                   <Heart className={cn(
                     "h-4 w-4 mr-2",
@@ -263,12 +314,26 @@ export default function ProjectDetail() {
                   className={cn(
                     likeStatus?.isBookmarked && "text-primary border-primary"
                   )}
+                  data-testid="button-bookmark-project"
                 >
                   <Bookmark className={cn(
                     "h-4 w-4",
                     likeStatus?.isBookmarked && "fill-current"
                   )} />
                 </Button>
+
+                {isOwner ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                    className="text-muted-foreground hover:text-destructive hover:border-destructive"
+                    data-testid="button-delete-project"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                ) : null}
               </div>
             </div>
 

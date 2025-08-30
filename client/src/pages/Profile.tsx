@@ -11,17 +11,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Calendar, Heart, Eye, MessageSquare, Code, Bookmark, User, Mail } from "lucide-react";
-import type { ProjectWithUser } from "@shared/schema";
+import { Calendar, Heart, Eye, MessageSquare, Code, Bookmark, User as UserIcon, Mail } from "lucide-react";
+import type { ProjectWithUser, User } from "@shared/schema";
 
 export default function Profile() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  
+  // Type assertion for user
+  const typedUser = user as User;
 
   // Get user's projects
   const { data: userProjects = [], isLoading: projectsLoading } = useQuery<ProjectWithUser[]>({
-    queryKey: ["/api/users", user?.id, "projects"],
-    enabled: !!user?.id,
+    queryKey: ["/api/users", typedUser?.id, "projects"],
+    enabled: !!typedUser?.id,
     retry: (failureCount, error) => {
       if (isUnauthorizedError(error as Error)) {
         toast({
@@ -87,27 +90,27 @@ export default function Profile() {
   const totalComments = userProjects.reduce((sum, project) => sum + (project.commentCount || 0), 0);
 
   const getDisplayName = () => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    if (typedUser.firstName && typedUser.lastName) {
+      return `${typedUser.firstName} ${typedUser.lastName}`;
     }
-    if (user.firstName) {
-      return user.firstName;
+    if (typedUser.firstName) {
+      return typedUser.firstName;
     }
-    if (user.email) {
-      return user.email.split('@')[0];
+    if (typedUser.email) {
+      return typedUser.email.split('@')[0];
     }
     return "Anonymous User";
   };
 
   const getInitials = () => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`;
+    if (typedUser.firstName && typedUser.lastName) {
+      return `${typedUser.firstName[0]}${typedUser.lastName[0]}`;
     }
-    if (user.firstName) {
-      return user.firstName[0];
+    if (typedUser.firstName) {
+      return typedUser.firstName[0];
     }
-    if (user.email) {
-      return user.email[0];
+    if (typedUser.email) {
+      return typedUser.email[0];
     }
     return "U";
   };
@@ -121,7 +124,7 @@ export default function Profile() {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.profileImageUrl || ""} />
+                  <AvatarImage src={typedUser.profileImageUrl || ""} />
                   <AvatarFallback className="text-2xl">
                     {getInitials()}
                   </AvatarFallback>
@@ -130,17 +133,17 @@ export default function Profile() {
                 <div className="flex-1 space-y-3">
                   <div>
                     <h1 className="text-2xl font-bold">{getDisplayName()}</h1>
-                    {user.email && (
+                    {typedUser.email && (
                       <div className="flex items-center space-x-2 text-muted-foreground mt-1">
                         <Mail className="h-4 w-4" />
-                        <span>{user.email}</span>
+                        <span>{typedUser.email}</span>
                       </div>
                     )}
                   </div>
                   
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {formatDate(user.createdAt!)}</span>
+                    <span>Joined {formatDate(typedUser.createdAt!)}</span>
                   </div>
                 </div>
                 
