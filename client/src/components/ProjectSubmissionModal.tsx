@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertProjectSchema } from "@shared/schema";
@@ -29,6 +30,7 @@ interface ProjectSubmissionModalProps {
 export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
   const [tagInput, setTagInput] = useState("");
   const [techStackInput, setTechStackInput] = useState("");
@@ -119,6 +121,15 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   };
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "You need to be logged in to submit a project",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!data.demoUrl && !data.sourceUrl) {
       toast({
         title: "Error",
@@ -146,6 +157,30 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       action();
     }
   };
+
+  // Show login prompt if not authenticated
+  if (isOpen && !isLoading && !isAuthenticated) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login Required</DialogTitle>
+            <DialogDescription>
+              You need to be logged in to submit a project to the community.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-4">
+            <Button asChild className="w-full">
+              <a href="/api/login">Sign In</a>
+            </Button>
+            <Button variant="outline" onClick={onClose} className="w-full">
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
