@@ -151,6 +151,8 @@ export default function ProjectDetail() {
       await apiRequest("DELETE", `/api/projects/${projectId}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       toast({
         title: "Success",
         description: "Project deleted successfully",
