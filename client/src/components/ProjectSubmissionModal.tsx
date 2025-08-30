@@ -9,14 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ObjectUploader } from "./ObjectUploader";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertProjectSchema } from "@shared/schema";
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import { z } from "zod";
-import type { UploadResult } from "@uppy/core";
 
 const formSchema = insertProjectSchema.extend({
   tags: z.array(z.string()).optional(),
@@ -32,8 +30,6 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
-  const [thumbnailInputMethod, setThumbnailInputMethod] = useState<"upload" | "url">("upload");
-  const [thumbnailUrlInput, setThumbnailUrlInput] = useState<string>("");
   const [tagInput, setTagInput] = useState("");
   const [techStackInput, setTechStackInput] = useState("");
 
@@ -67,7 +63,6 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
       });
       form.reset();
       setThumbnailUrl("");
-      setThumbnailUrlInput("");
       setTagInput("");
       setTechStackInput("");
       onClose();
@@ -92,43 +87,6 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    try {
-      const response = await apiRequest("POST", "/api/objects/upload");
-      if (!response.ok) {
-        throw new Error("Upload service unavailable");
-      }
-      const data = await response.json();
-      return {
-        method: "PUT" as const,
-        url: data.uploadURL,
-      };
-    } catch (error) {
-      toast({
-        title: "Upload Unavailable",
-        description: "File upload is currently not available. Please use URL input instead.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadedFile = result.successful[0];
-      const uploadURL = uploadedFile.uploadURL;
-      
-      console.log("Upload completed, URL:", uploadURL);
-      
-      // Simply store the upload URL - ACL will be set when project is created
-      setThumbnailUrl(uploadURL || "");
-      
-      toast({
-        title: "Success",
-        description: "Thumbnail uploaded successfully!",
-      });
-    }
-  };
 
   const addTag = () => {
     if (tagInput.trim()) {
@@ -173,7 +131,7 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
     if (!thumbnailUrl) {
       toast({
         title: "Error",
-        description: "썸네일 이미지를 업로드하거나 URL을 입력해주세요",
+        description: "썸네일 이미지 URL을 입력해주세요",
         variant: "destructive",
       });
       return;
@@ -250,90 +208,35 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
               )}
             />
 
-            {/* Thumbnail Upload */}
+            {/* Thumbnail URL Input */}
             <div className="space-y-3">
-              <Label>Thumbnail Image *</Label>
-              
-              {/* Method Selection */}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={thumbnailInputMethod === "upload" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setThumbnailInputMethod("upload");
-                    setThumbnailUrlInput("");
+              <Label>Thumbnail Image URL *</Label>
+              <div className="space-y-2">
+                <Input
+                  placeholder="이미지 URL을 입력하세요 (예: https://example.com/image.jpg)"
+                  value={thumbnailUrl}
+                  onChange={(e) => {
+                    setThumbnailUrl(e.target.value);
                   }}
-                  data-testid="button-upload-method"
-                >
-                  파일 업로드
-                </Button>
-                <Button
-                  type="button"
-                  variant={thumbnailInputMethod === "url" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setThumbnailInputMethod("url");
-                    setThumbnailUrl("");
-                  }}
-                  data-testid="button-url-method"
-                >
-                  URL 입력
-                </Button>
-              </div>
-
-              {/* File Upload Method */}
-              {thumbnailInputMethod === "upload" && (
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={5242880} // 5MB
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="w-full border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors bg-transparent"
-                >
-                  <div className="flex flex-col items-center space-y-2">
-                    <Plus className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                      <p className="text-muted-foreground">클릭하여 업로드하거나 드래그 앤 드롭</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG 최대 5MB</p>
-                      {thumbnailUrl && (
-                        <p className="text-xs text-primary mt-1">✓ 썸네일 업로드 완료</p>
-                      )}
-                    </div>
+                  data-testid="input-thumbnail-url"
+                />
+                {thumbnailUrl && (
+                  <div className="border rounded-lg p-2 bg-muted/20">
+                    <p className="text-xs text-muted-foreground mb-2">미리보기:</p>
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="w-20 h-20 object-cover rounded border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                      onLoad={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'block';
+                      }}
+                    />
                   </div>
-                </ObjectUploader>
-              )}
-
-              {/* URL Input Method */}
-              {thumbnailInputMethod === "url" && (
-                <div className="space-y-2">
-                  <Input
-                    placeholder="이미지 URL을 입력하세요 (예: https://example.com/image.jpg)"
-                    value={thumbnailUrlInput}
-                    onChange={(e) => {
-                      setThumbnailUrlInput(e.target.value);
-                      setThumbnailUrl(e.target.value);
-                    }}
-                    data-testid="input-thumbnail-url"
-                  />
-                  {thumbnailUrlInput && (
-                    <div className="border rounded-lg p-2 bg-muted/20">
-                      <p className="text-xs text-muted-foreground mb-2">미리보기:</p>
-                      <img
-                        src={thumbnailUrlInput}
-                        alt="Thumbnail preview"
-                        className="w-20 h-20 object-cover rounded border"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                        onLoad={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'block';
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Links */}
