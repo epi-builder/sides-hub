@@ -55,8 +55,7 @@ export class ObjectStorageService {
     );
     if (paths.length === 0) {
       throw new Error(
-        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
-          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+        "Object storage not configured. PUBLIC_OBJECT_SEARCH_PATHS environment variable not set."
       );
     }
     return paths;
@@ -67,8 +66,7 @@ export class ObjectStorageService {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
     if (!dir) {
       throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "Object storage not configured. PRIVATE_OBJECT_DIR environment variable not set."
       );
     }
     return dir;
@@ -133,12 +131,6 @@ export class ObjectStorageService {
   // Gets the upload URL for an object entity.
   async getObjectEntityUploadURL(): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
-    if (!privateObjectDir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
-      );
-    }
 
     const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;

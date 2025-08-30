@@ -93,12 +93,24 @@ export function ProjectSubmissionModal({ isOpen, onClose }: ProjectSubmissionMod
   });
 
   const handleGetUploadParameters = async () => {
-    const response = await apiRequest("POST", "/api/objects/upload");
-    const data = await response.json();
-    return {
-      method: "PUT" as const,
-      url: data.uploadURL,
-    };
+    try {
+      const response = await apiRequest("POST", "/api/objects/upload");
+      if (!response.ok) {
+        throw new Error("Upload service unavailable");
+      }
+      const data = await response.json();
+      return {
+        method: "PUT" as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      toast({
+        title: "Upload Unavailable",
+        description: "File upload is currently not available. Please use URL input instead.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {

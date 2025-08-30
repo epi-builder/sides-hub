@@ -364,9 +364,17 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
   });
 
   app.post("/api/objects/upload", authMiddleware, async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
-    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-    res.json({ uploadURL });
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Object storage not available:", error);
+      res.status(503).json({ 
+        message: "File upload is currently unavailable. Please use URL input instead.",
+        error: "Object storage not configured"
+      });
+    }
   });
 
   app.put("/api/projects/thumbnail", authMiddleware, async (req: any, res) => {
@@ -390,8 +398,11 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
         objectPath: objectPath,
       });
     } catch (error) {
-      console.error("Error setting thumbnail:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Error setting thumbnail (object storage not available):", error);
+      // If object storage is not available, just return the original URL
+      res.status(200).json({
+        objectPath: req.body.thumbnailUrl,
+      });
     }
   });
 
