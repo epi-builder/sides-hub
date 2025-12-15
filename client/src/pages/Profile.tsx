@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { ProjectCard } from "@/components/ProjectCard";
+import { ProjectSubmissionModal } from "@/components/ProjectSubmissionModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ import type { ProjectWithUser, User } from "@shared/schema";
 export default function Profile() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   
   // Type assertion for user
   const typedUser = user as User;
@@ -243,7 +245,7 @@ export default function Profile() {
                     <p className="text-muted-foreground mb-6">
                       Start showcasing your work by submitting your first project.
                     </p>
-                    <Button>Submit Your First Project</Button>
+                    <Button onClick={() => setIsSubmissionModalOpen(true)} data-testid="button-submit-first-project">Submit Your First Project</Button>
                   </CardContent>
                 </Card>
               )}
@@ -296,6 +298,11 @@ export default function Profile() {
           </Tabs>
         </div>
       </div>
+      
+      <ProjectSubmissionModal 
+        isOpen={isSubmissionModalOpen} 
+        onClose={() => setIsSubmissionModalOpen(false)} 
+      />
     </Layout>
   );
 }
