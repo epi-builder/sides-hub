@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Calendar, Heart, Eye, MessageSquare, Code, Bookmark, Mail } from "lucide-react";
+import { Calendar, Heart, Code, Bookmark, Mail, FileText } from "lucide-react";
 import type { ProjectWithUser, User } from "@shared/schema";
 
 export default function Profile() {
@@ -63,6 +63,12 @@ export default function Profile() {
     },
   });
 
+  // Get user's posts count
+  const { data: postsCountData } = useQuery<{ count: number }>({
+    queryKey: ["/api/users/me/posts-count"],
+    enabled: isAuthenticated,
+  });
+
   if (!isAuthenticated || !user) {
     return (
       <Layout>
@@ -88,8 +94,7 @@ export default function Profile() {
   };
 
   const totalLikes = userProjects.reduce((sum, project) => sum + (project.likeCount || 0), 0);
-  const totalViews = userProjects.reduce((sum, project) => sum + (project.viewCount || 0), 0);
-  const totalComments = userProjects.reduce((sum, project) => sum + (project.commentCount || 0), 0);
+  const totalPosts = postsCountData?.count ?? 0;
 
   const getDisplayName = () => {
     if (typedUser.firstName && typedUser.lastName) {
@@ -159,7 +164,7 @@ export default function Profile() {
           </Card>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mx-auto mb-3">
@@ -176,27 +181,17 @@ export default function Profile() {
                   <Heart className="h-6 w-6 text-accent" />
                 </div>
                 <div className="text-2xl font-bold">{totalLikes}</div>
-                <div className="text-sm text-muted-foreground">Total Likes</div>
+                <div className="text-sm text-muted-foreground">Total Project Likes</div>
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center w-12 h-12 bg-secondary/10 rounded-lg mx-auto mb-3">
-                  <Eye className="h-6 w-6 text-secondary" />
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-500/10 rounded-lg mx-auto mb-3">
+                  <FileText className="h-6 w-6 text-blue-500" />
                 </div>
-                <div className="text-2xl font-bold">{totalViews}</div>
-                <div className="text-sm text-muted-foreground">Total Views</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center w-12 h-12 bg-orange-500/10 rounded-lg mx-auto mb-3">
-                  <MessageSquare className="h-6 w-6 text-orange-500" />
-                </div>
-                <div className="text-2xl font-bold">{totalComments}</div>
-                <div className="text-sm text-muted-foreground">Total Comments</div>
+                <div className="text-2xl font-bold">{totalPosts}</div>
+                <div className="text-sm text-muted-foreground">Posts</div>
               </CardContent>
             </Card>
           </div>

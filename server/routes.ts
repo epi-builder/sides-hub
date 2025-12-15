@@ -222,6 +222,17 @@ export async function registerRoutes(app: Express, config: ServerConfig): Promis
     }
   });
 
+  app.get('/api/users/me/posts-count', authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUserPostsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching posts count:", error);
+      res.status(500).json({ message: "Failed to fetch posts count" });
+    }
+  });
+
   // Community routes
   app.get('/api/community/posts', async (req, res) => {
     try {

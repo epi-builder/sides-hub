@@ -55,6 +55,7 @@ export interface IStorage {
   // Community operations
   getCommunityPosts(page?: number, limit?: number): Promise<CommunityPostWithUser[]>;
   getCommunityPost(id: string): Promise<CommunityPostWithUser | undefined>;
+  getUserPostsCount(userId: string): Promise<number>;
   createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
   updateCommunityPost(id: string, post: Partial<InsertCommunityPost>, userId: string): Promise<CommunityPost | undefined>;
   deleteCommunityPost(id: string, userId: string): Promise<boolean>;
@@ -475,6 +476,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(communityPosts.id, id))
       .groupBy(communityPosts.id, users.id);
     return post && post.user ? post as CommunityPostWithUser : undefined;
+  }
+
+  async getUserPostsCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(communityPosts)
+      .where(eq(communityPosts.userId, userId));
+    return result?.count ?? 0;
   }
 
   async createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost> {
